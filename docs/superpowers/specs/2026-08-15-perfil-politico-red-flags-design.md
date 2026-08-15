@@ -42,7 +42,7 @@ Fontes abertas → Ingestão (jobs) → Postgres → Camada de análise → Next
 ### Stack
 - **Next.js (App Router)** + React, com Server Components lendo dados diretamente do banco.
 - **Postgres** como fonte da verdade normalizada.
-- **Drizzle ou Prisma** como ORM (decisão no plano de implementação; ambos servem).
+- **Prisma** como ORM.
 - **TypeScript** em todo o código.
 - Deploy alvo: Vercel (web) + Postgres gerenciado (ex: Neon/Supabase). Decisão final no plano.
 
@@ -59,7 +59,7 @@ Cada unidade tem um propósito único e é testável isoladamente.
   - **Portal da Transparência (API)** — emendas parlamentares e sua execução.
   - **TSE (dados abertos)** — dados de campanha/bens declarados (uso leve nesta fatia;
     central na Fatia 2).
-- **`db/`** — schema, migrations e camada de acesso a dados. Fonte da verdade.
+- **`db/`** — schema Prisma, migrations e camada de acesso a dados. Fonte da verdade.
 - **`analysis/`** — funções puras que recebem dados do banco e retornam red flags + "nota"
   em linguagem simples. Sem I/O direto; recebem dados como entrada → fáceis de testar.
 - **`app/`** (Next.js) — rotas: busca/lista de políticos e página de perfil individual.
