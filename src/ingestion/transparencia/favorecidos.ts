@@ -18,13 +18,23 @@ interface DocumentoRaw {
 
 const PALAVRAS_PUBLICAS = ["PREFEITURA", "MUNICIPIO", "MUNICÍPIO", "ESTADO DE", "FUNDO", "SECRETARIA", "GOVERNO"];
 
+// Aceita tanto "900000.00" quanto o formato brasileiro "900.000,00".
+function parseValor(v?: string | number): number {
+  if (typeof v === "number") return v;
+  if (!v) return 0;
+  let s = String(v).trim();
+  if (s.includes(",")) s = s.replace(/\./g, "").replace(",", ".");
+  const n = Number(s);
+  return Number.isNaN(n) ? 0 : n;
+}
+
 export function parseFavorecidos(raw: DocumentoRaw[], ano: number): FavorecidoNormalizado[] {
   return raw.map((d) => {
     const doc = d.favorecido?.codigoFormatado ?? "";
     const nome = d.favorecido?.nome ?? "";
     const tipoPessoa: "PF" | "PJ" = soDigitos(doc).length > 11 ? "PJ" : "PF";
     const publico = PALAVRAS_PUBLICAS.some((p) => nome.toUpperCase().includes(p));
-    return { doc, nome, tipoPessoa, valorPago: Number(d.valor ?? 0), ano, publico };
+    return { doc, nome, tipoPessoa, valorPago: parseValor(d.valor), ano, publico };
   });
 }
 

@@ -20,14 +20,27 @@ export async function obterConexoes(parlamentarId: string): Promise<Conexao[]> {
     sociosPorCnpj.set(s.cnpj, arr);
   }
 
-  const beneficiarios: BeneficiarioInput[] = favorecidos.map((f) => ({
-    doc: f.doc,
-    nome: f.nome,
-    tipoPessoa: f.tipoPessoa === "PJ" ? "PJ" : "PF",
-    valorPago: f.valorPago,
-    ano: f.ano,
-    socios: sociosPorCnpj.get(soDigitos(f.doc)) ?? [],
-  }));
+  // Um mesmo beneficiário (doc) pode aparecer em várias emendas; agregamos por
+  // documento (somando o valor pago) para não gerar conexões duplicadas.
+  const porDoc = new Map<string, BeneficiarioInput>();
+  for (const f of favorecidos) {
+    const chave = soDigitos(f.doc);
+    const existente = porDoc.get(chave);
+    if (existente) {
+      existente.valorPago += f.valorPago;
+      existente.ano = Math.max(existente.ano, f.ano);
+    } else {
+      porDoc.set(chave, {
+        doc: f.doc,
+        nome: f.nome,
+        tipoPessoa: f.tipoPessoa === "PJ" ? "PJ" : "PF",
+        valorPago: f.valorPago,
+        ano: f.ano,
+        socios: sociosPorCnpj.get(chave) ?? [],
+      });
+    }
+  }
+  const beneficiarios: BeneficiarioInput[] = [...porDoc.values()];
 
   return detectarConexoes({
     doadores: doacoes.map((d) => ({ nome: d.doadorNome, doc: d.doadorDoc, valor: d.valor, ano: d.ano })),
