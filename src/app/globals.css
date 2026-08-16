@@ -22,16 +22,10 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
-* {
-  box-sizing: border-box;
-  padding: 0;
-  margin: 0;
-}
-
-a {
-  color: inherit;
-  text-decoration: none;
-}
+/* Nota: NÃO usar um reset universal sem @layer aqui (ex.: `* { padding:0; margin:0 }`).
+   Regras fora de @layer vencem TODOS os utilitários do Tailwind (que ficam em
+   @layer utilities), zerando padding/margin/etc. O preflight do Tailwind já faz o
+   reset correto, dentro de camada, permitindo que os utilitários sobrescrevam. */
 
 @media (prefers-color-scheme: dark) {
   html {
