@@ -2,36 +2,27 @@ import type { RedFlag } from "./types";
 
 export interface EmendasInput {
   total: number;
-  porMunicipio: Array<{ municipio: string; valor: number }>;
-}
-
-function nivelEmendas(concentracao: number): RedFlag["nivel"] {
-  if (concentracao >= 0.7) return "alerta";
-  if (concentracao >= 0.5) return "atencao";
-  return "ok";
+  porBeneficiario: Array<{ nome: string; valor: number }>;
 }
 
 export function redFlagEmendas(i: EmendasInput): RedFlag {
   const base = {
     id: "emendas",
     titulo: "Destino das emendas",
-    fonte: "Portal da Transparência — Emendas Parlamentares",
+    fonte: "Portal da Transparência — Emendas e execução",
   };
-  if (i.total <= 0) {
-    return { ...base, nivel: "sem_dado", fraseSimples: "Sem emendas registradas no período." };
+  if (i.total <= 0 || i.porBeneficiario.length === 0) {
+    return { ...base, nivel: "sem_dado", fraseSimples: "Sem beneficiários rastreáveis no período." };
   }
-
-  const maior = i.porMunicipio.reduce(
-    (m, x) => (x.valor > m.valor ? x : m),
-    { municipio: "", valor: 0 },
-  );
+  const maior = i.porBeneficiario.reduce((m, x) => (x.valor > m.valor ? x : m), { nome: "", valor: 0 });
   const concentracao = maior.valor / i.total;
   const pct = Math.round(concentracao * 100);
-  const nivel = nivelEmendas(concentracao);
-
+  let nivel: RedFlag["nivel"] = "ok";
+  if (concentracao >= 0.7) nivel = "alerta";
+  else if (concentracao >= 0.5) nivel = "atencao";
   const frase =
     nivel === "ok"
-      ? "Emendas espalhadas por vários municípios."
-      : `${pct}% das emendas foram para um só município (${maior.municipio}). Vale entender o porquê.`;
+      ? "Emendas distribuídas entre vários beneficiários."
+      : `${pct}% das emendas foram para um só beneficiário (${maior.nome}). Vale entender o porquê.`;
   return { ...base, nivel, fraseSimples: frase };
 }

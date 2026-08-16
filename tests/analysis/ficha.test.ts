@@ -6,7 +6,7 @@ describe("montarFicha", () => {
     const ficha = montarFicha({
       presenca: { totalVotacoes: 100, presencas: 60, mediaPresencaPares: 0.9 },
       despesas: { totalGasto: 0, mediaGastoPares: 9000, porFornecedor: [] },
-      emendas: { total: 0, porMunicipio: [] },
+      emendas: { total: 0, porBeneficiario: [] },
       legislativa: { totalProposicoes: 25, mediaProposicoesPares: 20 },
     });
     expect(ficha.nivelGeral).toBe("alerta");
@@ -18,7 +18,7 @@ describe("montarFicha", () => {
     const ficha = montarFicha({
       presenca: { totalVotacoes: 0, presencas: 0, mediaPresencaPares: 0.9 },
       despesas: { totalGasto: 0, mediaGastoPares: 9000, porFornecedor: [] },
-      emendas: { total: 0, porMunicipio: [] },
+      emendas: { total: 0, porBeneficiario: [] },
       legislativa: { totalProposicoes: 0, mediaProposicoesPares: 20 },
     });
     expect(ficha.redFlags.map((r) => r.nivel)).toEqual(["sem_dado", "sem_dado", "sem_dado", "sem_dado"]);
@@ -29,7 +29,7 @@ describe("montarFicha", () => {
     const ficha = montarFicha({
       presenca: { totalVotacoes: 0, presencas: 0, mediaPresencaPares: 0.9 }, // sem_dado
       despesas: { totalGasto: 0, mediaGastoPares: 9000, porFornecedor: [] }, // sem_dado
-      emendas: { total: 0, porMunicipio: [] }, // sem_dado
+      emendas: { total: 0, porBeneficiario: [] }, // sem_dado
       legislativa: { totalProposicoes: 25, mediaProposicoesPares: 20 }, // ok
     });
     expect(ficha.nivelGeral).toBe("ok");
@@ -39,7 +39,7 @@ describe("montarFicha", () => {
     const ficha = montarFicha({
       presenca: { totalVotacoes: 100, presencas: 95, mediaPresencaPares: 0.9 },
       despesas: { totalGasto: 0, mediaGastoPares: 9000, porFornecedor: [] },
-      emendas: { total: 0, porMunicipio: [] },
+      emendas: { total: 0, porBeneficiario: [] },
       legislativa: { totalProposicoes: 25, mediaProposicoesPares: 20 },
     });
     expect(ficha.nivelGeral).toBe("ok");

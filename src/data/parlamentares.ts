@@ -19,19 +19,6 @@ function groupSum<T>(
   return [...soma];
 }
 
-// Rótulos do Portal que não representam um município específico.
-const LOCALIDADE_NAO_MUNICIPAL = new Set(["MULTIPLO", "MULTIPLOS", "NACIONAL", "EXTERIOR"]);
-
-function ehMunicipioReal(municipio: string | null): boolean {
-  if (!municipio) return false;
-  const norm = municipio
-    .normalize("NFD")
-    .replace(new RegExp("[\\u0300-\\u036f]", "g"), "")
-    .toUpperCase()
-    .trim();
-  return norm.length > 0 && !LOCALIDADE_NAO_MUNICIPAL.has(norm);
-}
-
 // Dados agregados brutos de UM parlamentar, prontos para montar a ficha.
 // Compartilhado por `obterPerfil` (query por id) e `listarComRadar` (batched),
 // garantindo montagem idêntica da ficha nos dois caminhos.
@@ -39,7 +26,7 @@ interface AgregadosParlamentar {
   totalVotacoesCasa: number;
   presencas: number;
   despesas: { fornecedorNome: string; valor: number }[];
-  emendas: { municipioBeneficiario: string | null; valorEmpenhado: number }[];
+  beneficiarios: { nome: string; valorPago: number }[];
   totalProposicoes: number;
 }
 
@@ -48,20 +35,16 @@ function fichaDeAgregados(a: AgregadosParlamentar): Ficha {
   const porFornecedor = groupSum(a.despesas, (d) => d.fornecedorNome, (d) => d.valor)
     .map(([nome, valor]) => ({ nome, valor }));
 
-  // "Concentração por município" só faz sentido para emendas atribuíveis a um
-  // município real. O Portal usa rótulos como "MÚLTIPLO"/"NACIONAL"/"EXTERIOR"
-  // para gastos não localizados — esses não entram no cálculo de concentração.
-  const comMunicipio = a.emendas.filter((e) => ehMunicipioReal(e.municipioBeneficiario));
-  const totalEmendas = comMunicipio.reduce((s, e) => s + e.valorEmpenhado, 0);
-  const porMunicipio = groupSum(comMunicipio, (e) => e.municipioBeneficiario!, (e) => e.valorEmpenhado)
-    .map(([municipio, valor]) => ({ municipio, valor }));
+  const totalEmendas = a.beneficiarios.reduce((s, b) => s + b.valorPago, 0);
+  const porBeneficiario = groupSum(a.beneficiarios, (b) => b.nome, (b) => b.valorPago)
+    .map(([nome, valor]) => ({ nome, valor }));
 
   // NOTE: as médias de pares são constantes de arranque (0.9 de presença,
   // R$300k de gasto, 20 proposições). Calcular médias reais é fatia futura.
   return montarFicha({
     presenca: { totalVotacoes: a.totalVotacoesCasa, presencas: a.presencas, mediaPresencaPares: 0.9 },
     despesas: { totalGasto, mediaGastoPares: 300000, porFornecedor },
-    emendas: { total: totalEmendas, porMunicipio },
+    emendas: { total: totalEmendas, porBeneficiario },
     legislativa: { totalProposicoes: a.totalProposicoes, mediaProposicoesPares: 20 },
   });
 }
@@ -96,11 +79,11 @@ export async function obterPerfil(id: string): Promise<Perfil | null> {
   // registrado). A maioria das "votações" da Câmara é simbólica/sem voto
   // registrado; contá-las inflaria as "faltas" de todo mundo. Escopamos por
   // casa (parlamentar só vota na sua) e exigimos ao menos um voto registrado.
-  const [totalVotacoes, presencas, despesas, emendas, totalProposicoes] = await Promise.all([
+  const [totalVotacoes, presencas, despesas, beneficiarios, totalProposicoes] = await Promise.all([
     prisma.votacao.count({ where: { casa: p.casa, votos: { some: {} } } }),
     prisma.votoRegistro.count({ where: { parlamentarId: id, voto: { not: "AUSENTE" } } }),
     prisma.despesa.findMany({ where: { parlamentarId: id, ano: ANO_REFERENCIA } }),
-    prisma.emenda.findMany({ where: { parlamentarId: id } }),
+    prisma.favorecido.findMany({ where: { parlamentarId: id }, select: { nome: true, valorPago: true } }),
     prisma.proposicao.count({ where: { parlamentarId: id } }),
   ]);
 
@@ -108,7 +91,7 @@ export async function obterPerfil(id: string): Promise<Perfil | null> {
     totalVotacoesCasa: totalVotacoes,
     presencas,
     despesas,
-    emendas,
+    beneficiarios,
     totalProposicoes,
   });
 
@@ -161,7 +144,7 @@ export async function listarComRadar(opts: ListarComRadarOpts = {}): Promise<Per
   const ids = ps.map((p) => p.id);
 
   // Agregações em lote sobre parlamentarId in ids.
-  const [votacaoPorCasaRows, presencaRows, despesasAll, emendasAll, proposicaoRows] =
+  const [votacaoPorCasaRows, presencaRows, despesasAll, beneficiariosAll, proposicaoRows] =
     await Promise.all([
       prisma.votacao.groupBy({ by: ["casa"], where: { votos: { some: {} } }, _count: { _all: true } }),
       prisma.votoRegistro.groupBy({
@@ -173,9 +156,9 @@ export async function listarComRadar(opts: ListarComRadarOpts = {}): Promise<Per
         where: { parlamentarId: { in: ids }, ano: ANO_REFERENCIA },
         select: { parlamentarId: true, fornecedorNome: true, valor: true },
       }),
-      prisma.emenda.findMany({
+      prisma.favorecido.findMany({
         where: { parlamentarId: { in: ids } },
-        select: { parlamentarId: true, municipioBeneficiario: true, valorEmpenhado: true },
+        select: { parlamentarId: true, nome: true, valorPago: true },
       }),
       prisma.proposicao.groupBy({
         by: ["parlamentarId"],
@@ -200,14 +183,11 @@ export async function listarComRadar(opts: ListarComRadarOpts = {}): Promise<Per
     else despesasPorId.set(d.parlamentarId, [d]);
   }
 
-  const emendasPorId = new Map<
-    string,
-    { municipioBeneficiario: string | null; valorEmpenhado: number }[]
-  >();
-  for (const e of emendasAll) {
-    const arr = emendasPorId.get(e.parlamentarId);
-    if (arr) arr.push(e);
-    else emendasPorId.set(e.parlamentarId, [e]);
+  const beneficiariosPorId = new Map<string, { nome: string; valorPago: number }[]>();
+  for (const b of beneficiariosAll) {
+    const arr = beneficiariosPorId.get(b.parlamentarId);
+    if (arr) arr.push(b);
+    else beneficiariosPorId.set(b.parlamentarId, [b]);
   }
 
   const perfis: Perfil[] = ps.map((p) => {
@@ -215,7 +195,7 @@ export async function listarComRadar(opts: ListarComRadarOpts = {}): Promise<Per
       totalVotacoesCasa: votacaoPorCasa.get(p.casa) ?? 0,
       presencas: presMap.get(p.id) ?? 0,
       despesas: despesasPorId.get(p.id) ?? [],
-      emendas: emendasPorId.get(p.id) ?? [],
+      beneficiarios: beneficiariosPorId.get(p.id) ?? [],
       totalProposicoes: propMap.get(p.id) ?? 0,
     });
     return { ...p, ficha };
