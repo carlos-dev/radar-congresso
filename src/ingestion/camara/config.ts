@@ -1,0 +1,1 @@
+export const BASE = "https://dadosabertos.camara.leg.br/api/v2";

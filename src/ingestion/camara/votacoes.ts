@@ -1,5 +1,6 @@
 import { fetchJson } from "../../lib/http";
 import { prisma } from "../../db/client";
+import { BASE } from "./config";
 
 export type VotoTipo = "SIM" | "NAO" | "ABSTENCAO" | "OBSTRUCAO";
 
@@ -27,15 +28,13 @@ export function parseVotos(raw: { dados: CamaraVoto[] }): VotoNormalizado[] {
     .map((v) => ({ externalIdDeputado: String(v.deputado_.id), voto: MAP[v.tipoVoto] }));
 }
 
-const BASE = "https://dadosabertos.camara.leg.br/api/v2";
-
 interface CamaraVotacao {
   id: string;
   data: string;
   descricao: string;
 }
 
-export async function ingestVotacoes(dataInicio: string, dataFim: string) {
+export async function ingestVotacoes(dataInicio: string, dataFim: string): Promise<void> {
   const lista = await fetchJson<{ dados: CamaraVotacao[] }>(
     `${BASE}/votacoes?dataInicio=${dataInicio}&dataFim=${dataFim}&itens=100&ordem=DESC&ordenarPor=data`,
   );

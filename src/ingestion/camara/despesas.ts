@@ -1,5 +1,6 @@
 import { fetchJson } from "../../lib/http";
 import { prisma } from "../../db/client";
+import { BASE } from "./config";
 
 export interface DespesaNormalizada {
   ano: number;
@@ -30,14 +31,18 @@ export function parseDespesas(raw: { dados: CamaraDespesa[] }): DespesaNormaliza
   }));
 }
 
-const BASE = "https://dadosabertos.camara.leg.br/api/v2";
-
-export async function ingestDespesas(parlamentarId: string, externalId: string, ano: number) {
+export async function ingestDespesas(
+  parlamentarId: string,
+  externalId: string,
+  ano: number,
+): Promise<number> {
   const raw = await fetchJson<{ dados: CamaraDespesa[] }>(
     `${BASE}/deputados/${externalId}/despesas?ano=${ano}&itens=100`,
   );
   const despesas = parseDespesas(raw);
-  await prisma.despesa.deleteMany({ where: { parlamentarId, ano } });
-  await prisma.despesa.createMany({ data: despesas.map((d) => ({ ...d, parlamentarId })) });
+  await prisma.$transaction([
+    prisma.despesa.deleteMany({ where: { parlamentarId, ano } }),
+    prisma.despesa.createMany({ data: despesas.map((d) => ({ ...d, parlamentarId })) }),
+  ]);
   return despesas.length;
 }

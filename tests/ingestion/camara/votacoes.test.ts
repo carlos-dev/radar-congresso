@@ -12,4 +12,10 @@ describe("parseVotos", () => {
       { externalIdDeputado: "222", voto: "ABSTENCAO" },
     ]);
   });
+
+  it("filtra tipos de voto desconhecidos", () => {
+    const out = parseVotos(fixture);
+    expect(out).toHaveLength(4);
+    expect(out.some((v) => v.externalIdDeputado === "333")).toBe(false);
+  });
 });

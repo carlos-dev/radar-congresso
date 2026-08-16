@@ -1,5 +1,6 @@
 import { fetchJson } from "../../lib/http";
 import { prisma } from "../../db/client";
+import { BASE } from "./config";
 
 export interface ProposicaoNormalizada {
   externalId: string;
@@ -26,9 +27,10 @@ export function parseProposicoes(raw: { dados: CamaraProposicao[] }): Proposicao
   }));
 }
 
-const BASE = "https://dadosabertos.camara.leg.br/api/v2";
-
-export async function ingestProposicoes(parlamentarId: string, externalId: string) {
+export async function ingestProposicoes(
+  parlamentarId: string,
+  externalId: string,
+): Promise<number> {
   const raw = await fetchJson<{ dados: CamaraProposicao[] }>(
     `${BASE}/proposicoes?idDeputadoAutor=${externalId}&itens=100`,
   );
