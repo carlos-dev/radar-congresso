@@ -9,7 +9,7 @@ export default async function Page({
   const { q } = await searchParams;
   const lista = await listarParlamentares(q);
   return (
-    <main style={{ maxWidth: 720, margin: "0 auto", padding: 24, fontFamily: "system-ui" }}>
+    <main className="antialiased" style={{ maxWidth: 720, margin: "0 auto", padding: 24, fontFamily: "system-ui" }}>
       <h1>Radar do Congresso</h1>
       <p>Veja como seus deputados e senadores atuam — em linguagem simples.</p>
       <form>
