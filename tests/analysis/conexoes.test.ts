@@ -53,4 +53,44 @@ describe("detectarConexoes", () => {
     expect(cx).toHaveLength(1);
     expect(cx[0].confianca).toBe("media");
   });
+
+  it("fragmento curto de dígitos NÃO vira 'alta' (cai para 'media')", () => {
+    const cx = detectarConexoes({
+      doadores: [{ nome: "João da Silva", doc: "***.789-**", valor: 5000, ano: 2022 }],
+      beneficiarios: [
+        { doc: "***.456.789-**", nome: "João da Silva", tipoPessoa: "PF", valorPago: 20000, ano: 2024, socios: [] },
+      ],
+    });
+    expect(cx).toHaveLength(1);
+    expect(cx[0].confianca).toBe("media");
+    expect(cx[0].confianca).not.toBe("alta");
+  });
+
+  it("dois CPFs válidos completos que diferem, mesmo nome → rejeita", () => {
+    const cx = detectarConexoes({
+      doadores: [{ nome: "João da Silva", doc: "***.456.789-**", valor: 5000, ano: 2022 }],
+      beneficiarios: [
+        { doc: "***.111.222-**", nome: "João da Silva", tipoPessoa: "PF", valorPago: 1000, ano: 2024, socios: [] },
+      ],
+    });
+    expect(cx).toHaveLength(0);
+  });
+
+  it("SOCIO: mantém a melhor confiança quando há múltiplos sócios homônimos", () => {
+    const cx = detectarConexoes({
+      doadores: [doador],
+      beneficiarios: [
+        {
+          doc: "12.345.678/0001-90", nome: "Construtora XPTO", tipoPessoa: "PJ", valorPago: 900000, ano: 2024,
+          socios: [
+            { nome: "João da Silva", doc: "" }, // só nome → media
+            { nome: "João da Silva", doc: "***.456.789-**" }, // nome + dígitos → alta
+          ],
+        },
+      ],
+    });
+    expect(cx).toHaveLength(1);
+    expect(cx[0].tipo).toBe("SOCIO");
+    expect(cx[0].confianca).toBe("alta");
+  });
 });

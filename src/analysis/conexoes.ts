@@ -43,12 +43,17 @@ function comparaPessoa(aNome: string, aDoc: string, bNome: string, bDoc: string)
 
   const digA = soDigitos(aDoc);
   const digB = soDigitos(bDoc);
-  if (digA && digB) {
-    const compat = digA === digB || digA.includes(digB) || digB.includes(digA);
-    return compat ? "alta" : null;
+  const MIN = 6; // um CPF mascarado expõe 6 dígitos; abaixo disso não dá para confirmar
+  if (digA.length >= MIN && digB.length >= MIN) {
+    // Ambos têm dígitos confiáveis: só é "alta" se forem exatamente iguais;
+    // dígitos diferentes = homônimo, rejeita.
+    return digA === digB ? "alta" : null;
   }
+  // Sem dígitos suficientes para confirmar nem rejeitar: cai para nome só.
   return "media";
 }
+
+const RANK: Record<Confianca, number> = { alta: 2, media: 1, baixa: 0 };
 
 export function detectarConexoes(input: ConexoesInput): Conexao[] {
   const conexoes: Conexao[] = [];
@@ -70,22 +75,25 @@ export function detectarConexoes(input: ConexoesInput): Conexao[] {
         continue;
       }
       if (b.tipoPessoa === "PJ") {
+        let melhor: Confianca | null = null;
         for (const s of b.socios) {
           const viaSocio = comparaPessoa(d.nome, d.doc, s.nome, s.doc);
-          if (viaSocio) {
-            conexoes.push({
-              tipo: "SOCIO",
-              doadorNome: d.nome,
-              doadorDoc: d.doc,
-              empresaCnpj: b.doc,
-              empresaNome: b.nome,
-              valorDoacao: d.valor,
-              valorEmenda: b.valorPago,
-              ano: b.ano,
-              confianca: viaSocio,
-            });
-            break;
+          if (viaSocio && (melhor === null || RANK[viaSocio] > RANK[melhor])) {
+            melhor = viaSocio;
           }
+        }
+        if (melhor) {
+          conexoes.push({
+            tipo: "SOCIO",
+            doadorNome: d.nome,
+            doadorDoc: d.doc,
+            empresaCnpj: b.doc,
+            empresaNome: b.nome,
+            valorDoacao: d.valor,
+            valorEmenda: b.valorPago,
+            ano: b.ano,
+            confianca: melhor,
+          });
         }
       }
     }
