@@ -1,3 +1,4 @@
+import "dotenv/config";
 import { prisma } from "../db/client";
 import { ingestDeputados } from "./camara/deputados";
 import { ingestDespesas } from "./camara/despesas";
