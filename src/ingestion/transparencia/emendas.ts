@@ -1,5 +1,6 @@
 import { fetchJson } from "../../lib/http";
 import { prisma } from "../../db/client";
+import { normalizaNome } from "../../lib/texto";
 
 export interface EmendaNormalizada {
   ano: number;
@@ -55,11 +56,7 @@ const BASE = "https://api.portaldatransparencia.gov.br/api-de-dados";
 // O filtro nomeAutor do Portal é case-sensitive e usa o nome parlamentar em
 // CAIXA ALTA e sem acento (ex.: "TABATA AMARAL"). Normalizamos para casar.
 export function normalizaNomeAutor(nome: string): string {
-  return nome
-    .normalize("NFD")
-    .replace(new RegExp("[\\u0300-\\u036f]", "g"), "")
-    .toUpperCase()
-    .trim();
+  return normalizaNome(nome);
 }
 
 export async function ingestEmendas(parlamentarId: string, nomeAutor: string, ano: number): Promise<number> {
