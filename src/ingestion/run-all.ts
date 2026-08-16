@@ -20,6 +20,11 @@ export function ordemDeIngestao(): string[] {
   ];
 }
 
+// Respiro entre chamadas ao Portal da Transparência para não estourar o
+// rate limit (~90 req/min em horário comercial) e sermos bloqueados.
+const PORTAL_DELAY_MS = 800;
+const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+
 async function main() {
   console.log("Ingerindo deputados...");
   await ingestDeputados();
@@ -55,7 +60,10 @@ async function main() {
   if (process.env.PORTAL_TRANSPARENCIA_API_KEY) {
     console.log("Ingerindo emendas...");
     const todos = await prisma.parlamentar.findMany();
-    for (const p of todos) await ingestEmendas(p.id, p.nome, ANO_REFERENCIA).catch(() => 0);
+    for (const p of todos) {
+      await ingestEmendas(p.id, p.nome, ANO_REFERENCIA).catch(() => 0);
+      await sleep(PORTAL_DELAY_MS);
+    }
   } else {
     console.log("Pulei emendas (sem PORTAL_TRANSPARENCIA_API_KEY).");
   }
@@ -86,6 +94,7 @@ async function mainInvestigacao() {
     console.log(`Ingerindo favorecidos de ${emendas.length} emendas...`);
     for (const e of emendas) {
       await ingestFavorecidos(e.parlamentarId, e.codigoEmenda as string, e.ano).catch(() => 0);
+      await sleep(PORTAL_DELAY_MS);
     }
   } catch (err) {
     console.warn(`Falha em favorecidos: ${(err as Error).message}`);
