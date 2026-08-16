@@ -4,6 +4,7 @@ import { normalizaNome } from "../../lib/texto";
 
 export interface EmendaNormalizada {
   ano: number;
+  codigoEmenda: string | null;
   funcao: string | null;
   municipioBeneficiario: string | null;
   uf: string | null;
@@ -13,6 +14,7 @@ export interface EmendaNormalizada {
 
 interface TransparenciaEmenda {
   ano: number;
+  codigoEmenda?: string;
   funcao?: string;
   localidadeDoGasto?: string;
   valorEmpenhado?: string;
@@ -42,6 +44,7 @@ export function parseEmendas(raw: TransparenciaEmenda[]): EmendaNormalizada[] {
     const { municipio, uf } = splitLocalidade(e.localidadeDoGasto);
     return {
       ano: e.ano,
+      codigoEmenda: e.codigoEmenda ?? null,
       funcao: e.funcao ?? null,
       municipioBeneficiario: municipio,
       uf,

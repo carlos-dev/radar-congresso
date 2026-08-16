@@ -90,6 +90,7 @@ model Emenda {
   parlamentar           Parlamentar @relation(fields: [parlamentarId], references: [id])
   parlamentarId         String
   ano                   Int
+  codigoEmenda          String?
   funcao                String?
   municipioBeneficiario String?
   uf                    String?

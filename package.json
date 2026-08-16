@@ -10,6 +10,7 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "ingest": "tsx src/ingestion/run-all.ts",
+    "ingest:investigacao": "tsx src/ingestion/run-all.ts investigacao",
     "postinstall": "prisma generate"
   },
   "dependencies": {
