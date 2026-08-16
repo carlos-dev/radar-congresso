@@ -66,6 +66,7 @@ model VotoRegistro {
   parlamentarId String
   voto          Voto
   @@unique([votacaoId, parlamentarId])
+  @@index([parlamentarId])
 }
 
 model Proposicao {
