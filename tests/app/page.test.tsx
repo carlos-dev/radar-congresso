@@ -1,26 +1,48 @@
 import { describe, it, expect, vi } from "vitest";
+import { renderToStaticMarkup } from "react-dom/server";
 
-// next/link is a CJS module with a circular structure that breaks JSON.stringify;
-// mock it as a plain anchor so the rendered element can be serialized in tests.
+// Mocks leves para módulos do Next/ícones, para renderizar em ambiente node.
 vi.mock("next/link", () => ({
-  default: ({ children, href }: { children: unknown; href: string }) => ({
-    type: "a",
-    props: { href, children },
-  }),
+  default: ({ children, ...props }: { children?: unknown } & Record<string, unknown>) => (
+    <a {...(props as Record<string, unknown>)}>{children as never}</a>
+  ),
 }));
+vi.mock("next/image", () => ({
+  default: (props: Record<string, unknown>) => <img {...props} />,
+}));
+vi.mock("lucide-react", () => ({}));
 
-vi.mock("../../src/data/parlamentares", () => ({
-  listarParlamentares: vi.fn().mockResolvedValue([
-    { id: "1", nome: "Fulano", partido: "XPTO", uf: "SP", casa: "CAMARA", urlFoto: null },
+vi.mock("@/lib/dados", () => ({
+  listarComRadar: vi.fn().mockResolvedValue([
+    {
+      id: "1",
+      nome: "Fulano de Tal",
+      partido: "XPTO",
+      uf: "SP",
+      casa: "CAMARA",
+      urlFoto: null,
+      ficha: {
+        nivelGeral: "alerta",
+        redFlags: [
+          { id: "presenca", titulo: "Presença nas votações", nivel: "alerta", fraseSimples: "Faltou muito.", fonte: "Câmara" },
+          { id: "despesas", titulo: "Gastos da cota", nivel: "atencao", fraseSimples: "Gastou acima.", fonte: "Câmara" },
+          { id: "emendas", titulo: "Emendas", nivel: "ok", fraseSimples: "Distribuídas.", fonte: "Transparência" },
+          { id: "legislativa", titulo: "Produção legislativa", nivel: "ok", fraseSimples: "Apresentou projetos.", fonte: "Câmara" },
+        ],
+      },
+    },
   ]),
 }));
 
-import Page from "../../src/app/page";
+import Page from "@/app/page";
 
 describe("Home", () => {
-  it("renderiza a lista de parlamentares", async () => {
+  it("renderiza a lista com o radar e o título principal", async () => {
     const el = await Page({ searchParams: Promise.resolve({}) });
-    const json = JSON.stringify(el);
-    expect(json).toContain("Fulano");
+    const html = renderToStaticMarkup(el);
+    expect(html).toContain("Fulano de Tal");
+    expect(html).toContain("XPTO");
+    expect(html).toContain("Seus deputados e senadores");
+    expect(html).toContain("Buscar");
   });
 });

@@ -1,25 +1,124 @@
+import Link from "next/link";
 import { notFound } from "next/navigation";
-import { obterPerfil } from "../../../data/parlamentares";
-import { RedFlagCard } from "./RedFlagCard";
+import { TopNav } from "@/components/TopNav";
+import { RadarBars } from "@/components/RadarBars";
+import { RedFlagCard } from "@/components/RedFlagCard";
+import { AvisoEtico } from "@/components/AvisoEtico";
+import { SiteFooter } from "@/components/SiteFooter";
+import { NIVEL_CONFIG } from "@/lib/nivel";
+import { iniciais } from "@/lib/iniciais";
+import { obterPerfil } from "@/lib/dados";
 
-export default async function Perfil({ params }: { params: Promise<{ id: string }> }) {
+type Props = { params: Promise<{ id: string }> };
+
+export default async function PerfilPage({ params }: Props) {
   const { id } = await params;
   const perfil = await obterPerfil(id);
   if (!perfil) notFound();
+
+  const partidoUf = [perfil.partido, perfil.uf].filter(Boolean).join("-") || "Sem partido";
+  const casaLonga = perfil.casa === "SENADO" ? "Senado Federal" : "Câmara dos Deputados";
+  const geral = NIVEL_CONFIG[perfil.ficha.nivelGeral];
+
   return (
-    <main style={{ maxWidth: 720, margin: "0 auto", padding: 24, fontFamily: "system-ui" }}>
-      <a href="/">← voltar</a>
-      <h1>{perfil.nome}</h1>
-      <p>{perfil.partido}/{perfil.uf} — {perfil.casa}</p>
-      <h2>Ficha do parlamentar</h2>
-      {perfil.ficha.redFlags.map((rf) => (
-        <RedFlagCard key={rf.id} rf={rf} />
-      ))}
-      <p style={{ marginTop: 24, fontSize: 13, color: "#666", background: "#f6f6f6", padding: 12, borderRadius: 8 }}>
-        Estes são <strong>sinais para você investigar</strong>, com base em dados públicos oficiais — não são
-        acusações. Vale sempre a <strong>presunção de inocência</strong>: um sinal de alerta indica um padrão que
-        merece atenção, não a comprovação de irregularidade.
-      </p>
-    </main>
+    <>
+      {/* Faixa escura: nav + cabeçalho do perfil */}
+      <div style={{ backgroundColor: "var(--ds-ink)" }} className="text-[var(--ds-on-dark)]">
+        <div className="mx-auto w-full max-w-[1080px] px-6">
+          <TopNav />
+
+          <Link
+            href="/"
+            className="mt-6 inline-block text-[11px] uppercase tracking-[0.08em]"
+            style={{ color: "var(--ds-on-dark-72)" }}
+          >
+            ← Voltar para a busca
+          </Link>
+
+          <header className="flex flex-wrap items-start justify-between gap-x-10 gap-y-8 pb-24 pt-6">
+            <div className="flex min-w-0 flex-1 basis-[24rem] items-start gap-5">
+              <span
+                className="flex size-[72px] shrink-0 items-center justify-center rounded-lg border text-[22px] font-semibold"
+                style={{ borderColor: "var(--ds-on-dark-24)" }}
+              >
+                {iniciais(perfil.nome)}
+              </span>
+              <div className="min-w-0">
+                <p
+                  className="text-[11px] font-semibold uppercase tracking-[0.16em]"
+                  style={{ color: "var(--ds-primary)" }}
+                >
+                  {casaLonga}
+                </p>
+                <h1 className="mt-2 text-[32px] font-semibold leading-tight tracking-[-0.03em] sm:text-[44px]">
+                  {perfil.nome}
+                </h1>
+                <p
+                  className="mt-2 text-[14px] uppercase tracking-[0.06em]"
+                  style={{ color: "var(--ds-on-dark-48)" }}
+                >
+                  {partidoUf} · Mandato 2023–2027
+                </p>
+              </div>
+            </div>
+
+            <div className="flex flex-col items-start gap-3">
+              <p
+                className="text-[10px] uppercase tracking-[0.1em]"
+                style={{ color: "var(--ds-on-dark-48)" }}
+              >
+                Leitura geral do radar
+              </p>
+              <RadarBars redFlags={perfil.ficha.redFlags} variante="perfil" />
+              <p className="text-[20px] font-semibold" style={{ color: geral.cor }}>
+                {geral.rotuloGeral}
+              </p>
+            </div>
+          </header>
+        </div>
+      </div>
+
+      {/* Ficha sobrepondo a faixa */}
+      <div className="mx-auto -mt-[30px] w-full max-w-[1080px] px-6">
+        <div
+          className="rounded-xl border p-6"
+          style={{
+            backgroundColor: "var(--ds-card)",
+            borderColor: "var(--ds-hair)",
+            boxShadow: "0 18px 40px -24px rgba(0,0,0,.35)",
+          }}
+        >
+          <h2 className="text-[22px] font-semibold">Ficha do parlamentar</h2>
+          <p className="mt-1 max-w-[64ch] text-pretty text-[14px]" style={{ color: "var(--ds-muted)" }}>
+            Quatro sinais acompanhados em dados públicos oficiais. Cada card traz a fonte de onde a
+            informação foi tirada.
+          </p>
+        </div>
+      </div>
+
+      <main className="mx-auto w-full max-w-[1080px] px-6 pb-16 pt-6">
+        <ol className="grid grid-cols-[repeat(auto-fit,minmax(320px,1fr))] gap-4">
+          {perfil.ficha.redFlags.map((rf, i) => (
+            <li key={rf.id} className="flex">
+              <RedFlagCard rf={rf} numero={i + 1} />
+            </li>
+          ))}
+        </ol>
+
+        <div className="mt-8">
+          <AvisoEtico />
+        </div>
+
+        <Link
+          href="/"
+          className="mt-8 inline-block text-[14px] font-semibold underline underline-offset-4"
+          style={{ color: "var(--ds-primary-darker)" }}
+        >
+          ← Ver outros parlamentares
+        </Link>
+      </main>
+
+      <SiteFooter />
+    </>
   );
 }

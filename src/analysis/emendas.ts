@@ -5,6 +5,12 @@ export interface EmendasInput {
   porMunicipio: Array<{ municipio: string; valor: number }>;
 }
 
+function nivelEmendas(concentracao: number): RedFlag["nivel"] {
+  if (concentracao >= 0.7) return "alerta";
+  if (concentracao >= 0.5) return "atencao";
+  return "ok";
+}
+
 export function redFlagEmendas(i: EmendasInput): RedFlag {
   const base = {
     id: "emendas",
@@ -14,15 +20,15 @@ export function redFlagEmendas(i: EmendasInput): RedFlag {
   if (i.total <= 0) {
     return { ...base, nivel: "sem_dado", fraseSimples: "Sem emendas registradas no período." };
   }
+
   const maior = i.porMunicipio.reduce(
     (m, x) => (x.valor > m.valor ? x : m),
     { municipio: "", valor: 0 },
   );
   const concentracao = maior.valor / i.total;
   const pct = Math.round(concentracao * 100);
-  let nivel: RedFlag["nivel"] = "ok";
-  if (concentracao >= 0.7) nivel = "alerta";
-  else if (concentracao >= 0.5) nivel = "atencao";
+  const nivel = nivelEmendas(concentracao);
+
   const frase =
     nivel === "ok"
       ? "Emendas espalhadas por vários municípios."
