@@ -19,6 +19,19 @@ function groupSum<T>(
   return [...soma];
 }
 
+// Rótulos do Portal que não representam um município específico.
+const LOCALIDADE_NAO_MUNICIPAL = new Set(["MULTIPLO", "MULTIPLOS", "NACIONAL", "EXTERIOR"]);
+
+function ehMunicipioReal(municipio: string | null): boolean {
+  if (!municipio) return false;
+  const norm = municipio
+    .normalize("NFD")
+    .replace(new RegExp("[\\u0300-\\u036f]", "g"), "")
+    .toUpperCase()
+    .trim();
+  return norm.length > 0 && !LOCALIDADE_NAO_MUNICIPAL.has(norm);
+}
+
 // Dados agregados brutos de UM parlamentar, prontos para montar a ficha.
 // Compartilhado por `obterPerfil` (query por id) e `listarComRadar` (batched),
 // garantindo montagem idêntica da ficha nos dois caminhos.
@@ -35,8 +48,11 @@ function fichaDeAgregados(a: AgregadosParlamentar): Ficha {
   const porFornecedor = groupSum(a.despesas, (d) => d.fornecedorNome, (d) => d.valor)
     .map(([nome, valor]) => ({ nome, valor }));
 
-  const totalEmendas = a.emendas.reduce((s, e) => s + e.valorEmpenhado, 0);
-  const comMunicipio = a.emendas.filter((e) => e.municipioBeneficiario);
+  // "Concentração por município" só faz sentido para emendas atribuíveis a um
+  // município real. O Portal usa rótulos como "MÚLTIPLO"/"NACIONAL"/"EXTERIOR"
+  // para gastos não localizados — esses não entram no cálculo de concentração.
+  const comMunicipio = a.emendas.filter((e) => ehMunicipioReal(e.municipioBeneficiario));
+  const totalEmendas = comMunicipio.reduce((s, e) => s + e.valorEmpenhado, 0);
   const porMunicipio = groupSum(comMunicipio, (e) => e.municipioBeneficiario!, (e) => e.valorEmpenhado)
     .map(([municipio, valor]) => ({ municipio, valor }));
 
@@ -76,10 +92,12 @@ export async function obterPerfil(id: string): Promise<Perfil | null> {
   const p = await prisma.parlamentar.findUnique({ where: { id } });
   if (!p) return null;
 
-  // Um parlamentar só vota na sua própria casa, portanto o total de votações
-  // é escopado por casa (senão a presença ficaria subestimada).
+  // Presença só faz sentido sobre votações NOMINAIS (com voto individual
+  // registrado). A maioria das "votações" da Câmara é simbólica/sem voto
+  // registrado; contá-las inflaria as "faltas" de todo mundo. Escopamos por
+  // casa (parlamentar só vota na sua) e exigimos ao menos um voto registrado.
   const [totalVotacoes, presencas, despesas, emendas, totalProposicoes] = await Promise.all([
-    prisma.votacao.count({ where: { casa: p.casa } }),
+    prisma.votacao.count({ where: { casa: p.casa, votos: { some: {} } } }),
     prisma.votoRegistro.count({ where: { parlamentarId: id, voto: { not: "AUSENTE" } } }),
     prisma.despesa.findMany({ where: { parlamentarId: id, ano: ANO_REFERENCIA } }),
     prisma.emenda.findMany({ where: { parlamentarId: id } }),
@@ -145,7 +163,7 @@ export async function listarComRadar(opts: ListarComRadarOpts = {}): Promise<Per
   // Agregações em lote sobre parlamentarId in ids.
   const [votacaoPorCasaRows, presencaRows, despesasAll, emendasAll, proposicaoRows] =
     await Promise.all([
-      prisma.votacao.groupBy({ by: ["casa"], _count: { _all: true } }),
+      prisma.votacao.groupBy({ by: ["casa"], where: { votos: { some: {} } }, _count: { _all: true } }),
       prisma.votoRegistro.groupBy({
         by: ["parlamentarId"],
         where: { parlamentarId: { in: ids }, voto: { not: "AUSENTE" } },
