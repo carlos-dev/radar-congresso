@@ -1,0 +1,5 @@
+{
+  "dados": [
+    { "ano": 2025, "mes": 3, "tipoDespesa": "COMBUSTÍVEIS", "nomeFornecedor": "Posto ABC", "cnpjCpfFornecedor": "00.000.000/0001-00", "valorLiquido": 1500.5 }
+  ]
+}
