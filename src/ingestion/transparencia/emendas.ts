@@ -24,6 +24,18 @@ function splitLocalidade(loc?: string): { municipio: string | null; uf: string |
   return { municipio: municipio ?? null, uf: uf ?? null };
 }
 
+function parseValor(v?: string | number): number {
+  if (typeof v === "number") return v;
+  if (!v) return 0;
+  let s = String(v).trim();
+  if (s.includes(",")) {
+    // Brazilian format: "." are thousands separators, "," is the decimal
+    s = s.replace(/\./g, "").replace(",", ".");
+  }
+  const n = Number(s);
+  return Number.isNaN(n) ? 0 : n;
+}
+
 export function parseEmendas(raw: TransparenciaEmenda[]): EmendaNormalizada[] {
   return raw.map((e) => {
     const { municipio, uf } = splitLocalidade(e.localidadeDoGasto);
@@ -32,8 +44,8 @@ export function parseEmendas(raw: TransparenciaEmenda[]): EmendaNormalizada[] {
       funcao: e.funcao ?? null,
       municipioBeneficiario: municipio,
       uf,
-      valorEmpenhado: Number(e.valorEmpenhado ?? 0),
-      valorPago: Number(e.valorPago ?? 0),
+      valorEmpenhado: parseValor(e.valorEmpenhado),
+      valorPago: parseValor(e.valorPago),
     };
   });
 }
