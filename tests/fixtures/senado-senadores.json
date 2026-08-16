@@ -1,0 +1,17 @@
+{
+  "ListaParlamentarEmExercicio": {
+    "Parlamentares": {
+      "Parlamentar": [
+        {
+          "IdentificacaoParlamentar": {
+            "CodigoParlamentar": "5000",
+            "NomeParlamentar": "Beltrana",
+            "SiglaPartidoParlamentar": "ABC",
+            "UfParlamentar": "BA",
+            "UrlFotoParlamentar": "http://foto/5000.jpg"
+          }
+        }
+      ]
+    }
+  }
+}
