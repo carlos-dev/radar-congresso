@@ -9,10 +9,7 @@ vi.mock("next/link", () => ({
 vi.mock("next/image", () => ({
   default: (props: Record<string, unknown>) => <img {...props} />,
 }));
-vi.mock("lucide-react", () => ({
-  ArrowLeft: () => <svg data-icon="arrow-left" />,
-  Info: () => <svg data-icon="info" />,
-}));
+vi.mock("lucide-react", () => ({}));
 
 vi.mock("@/lib/dados", () => ({
   obterPerfil: vi.fn().mockResolvedValue({

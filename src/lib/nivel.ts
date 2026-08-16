@@ -1,49 +1,46 @@
 import type { Nivel } from "@/lib/tipos";
 
 type NivelConfig = {
-  /** Rótulo curto usado no selo. */
+  /** Rótulo curto (linha da lista, selo do card). */
   rotulo: string;
   /** Rótulo do selo geral, no perfil. */
   rotuloGeral: string;
-  /** Classes do selo (fundo + texto + borda). */
-  badge: string;
-  /** Cor da borda de acento do card. */
-  acento: string;
-  /** Cor do ponto indicador. */
-  ponto: string;
+  /** Cor principal (barra do radar, texto do selo geral). */
+  cor: string;
+  /** Cor escurecida (texto legível sobre fundo claro). */
+  corEscura: string;
+  /** Fundo do selo/pílula. */
+  bg: string;
 };
 
-/** Fonte única de verdade dos níveis — evita `if` espalhado pela UI. */
+/** Fonte única de verdade dos níveis — usa as CSS vars da paleta em globals.css. */
 export const NIVEL_CONFIG: Record<Nivel, NivelConfig> = {
   ok: {
     rotulo: "Tudo certo",
     rotuloGeral: "Tudo certo por aqui",
-    badge:
-      "bg-emerald-50 text-emerald-900 border-emerald-300 dark:bg-emerald-950 dark:text-emerald-100 dark:border-emerald-800",
-    acento: "border-l-emerald-500 dark:border-l-emerald-400",
-    ponto: "bg-emerald-600 dark:bg-emerald-400",
+    cor: "var(--ds-ok)",
+    corEscura: "var(--ds-ok-dark)",
+    bg: "var(--ds-ok-bg)",
   },
   atencao: {
     rotulo: "Atenção",
     rotuloGeral: "Vale ficar de olho",
-    badge:
-      "bg-amber-50 text-amber-950 border-amber-300 dark:bg-amber-950 dark:text-amber-100 dark:border-amber-800",
-    acento: "border-l-amber-500 dark:border-l-amber-400",
-    ponto: "bg-amber-600 dark:bg-amber-400",
+    cor: "var(--ds-atencao)",
+    corEscura: "var(--ds-atencao-dark)",
+    bg: "var(--ds-atencao-bg)",
   },
   alerta: {
     rotulo: "Sinal de alerta",
     rotuloGeral: "Tem sinal de alerta",
-    badge:
-      "bg-red-50 text-red-900 border-red-300 dark:bg-red-950 dark:text-red-100 dark:border-red-800",
-    acento: "border-l-red-500 dark:border-l-red-400",
-    ponto: "bg-red-600 dark:bg-red-400",
+    cor: "var(--ds-alerta)",
+    corEscura: "var(--ds-alerta-dark)",
+    bg: "var(--ds-alerta-bg)",
   },
   sem_dado: {
     rotulo: "Sem dados",
     rotuloGeral: "Ainda sem dados",
-    badge: "bg-muted text-muted-foreground border-border",
-    acento: "border-l-muted-foreground/40",
-    ponto: "bg-muted-foreground/60",
+    cor: "var(--ds-semdado)",
+    corEscura: "var(--ds-semdado-dark)",
+    bg: "var(--ds-semdado-bg)",
   },
 };
