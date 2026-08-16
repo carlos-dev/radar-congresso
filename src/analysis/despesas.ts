@@ -20,12 +20,20 @@ export function redFlagDespesas(i: DespesasInput): RedFlag {
   const pct = Math.round(concentracao * 100);
   const acimaMedia = i.totalGasto > i.mediaGastoPares * 1.2;
   let nivel: RedFlag["nivel"] = "ok";
+  // NOTA: limiar de concentração aqui é > 0.5 (atenção), diferente de emendas.ts
+  // que usa >= 0.5. A diferença é intencional — não unificar sem revisar ambos.
   if (concentracao >= 0.7 || acimaMedia) nivel = "alerta";
   else if (concentracao > 0.5) nivel = "atencao";
-  const frase =
-    nivel === "ok"
-      ? "Gastos distribuídos e dentro da média dos colegas."
-      : `${pct}% do gasto foi para um único fornecedor (${maior.nome}).` +
-        (acimaMedia ? " O total também está acima da média." : "");
+  let frase: string;
+  if (nivel === "ok") {
+    frase = "Gastos distribuídos e dentro da média dos colegas.";
+  } else if (acimaMedia && concentracao < 0.5) {
+    // Quando o gatilho é o total (não a concentração), lidera com o total.
+    frase = "O gasto total ficou acima da média dos colegas.";
+  } else {
+    frase =
+      `${pct}% do gasto foi para um único fornecedor (${maior.nome}).` +
+      (acimaMedia ? " O total também está acima da média." : "");
+  }
   return { ...base, nivel, fraseSimples: frase };
 }

@@ -21,7 +21,13 @@ export function redFlagPresenca(i: PresencaInput): RedFlag {
   let nivel: RedFlag["nivel"] = "ok";
   if (taxa < i.mediaPresencaPares - 0.15) nivel = "alerta";
   else if (taxa < i.mediaPresencaPares - 0.05) nivel = "atencao";
-  const comparacao =
-    nivel === "ok" ? " Está entre os que mais comparecem." : " Isso é mais faltas que a maioria dos colegas.";
+  let comparacao: string;
+  if (nivel === "ok") {
+    comparacao = taxa >= i.mediaPresencaPares
+      ? " Está entre os que mais comparecem."
+      : " Presença dentro do normal.";
+  } else {
+    comparacao = " Isso é mais faltas que a maioria dos colegas.";
+  }
   return { ...base, nivel, fraseSimples: frase + comparacao };
 }

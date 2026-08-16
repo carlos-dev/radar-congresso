@@ -20,6 +20,16 @@ describe("redFlagEmendas", () => {
     expect(rf.nivel).toBe("ok");
   });
 
+  it("atencao quando concentração fica entre 0.5 e 0.7", () => {
+    // 600000/1000000 = 0.6 → >= 0.5 e < 0.7 → atencao
+    const rf = redFlagEmendas({
+      total: 1000000,
+      porMunicipio: [{ municipio: "Salvador", valor: 600000 }, { municipio: "Feira", valor: 400000 }],
+    });
+    expect(rf.nivel).toBe("atencao");
+    expect(rf.fraseSimples).toContain("60%");
+  });
+
   it("sem_dado quando não há emendas", () => {
     const rf = redFlagEmendas({ total: 0, porMunicipio: [] });
     expect(rf.nivel).toBe("sem_dado");
