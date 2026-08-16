@@ -1,26 +1,26 @@
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { NivelBadge } from "@/components/NivelBadge";
+import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
-import type { RedFlag } from "@/analysis/types";
+import { NivelBadge } from "@/components/NivelBadge";
+import { NIVEL_CONFIG } from "@/lib/nivel";
+import type { RedFlag } from "@/lib/tipos";
 
-const ACCENT_BORDA: Record<RedFlag["nivel"], string> = {
-  ok: "border-l-nivel-ok",
-  atencao: "border-l-nivel-atencao",
-  alerta: "border-l-nivel-alerta",
-  sem_dado: "border-l-nivel-sem-dado",
-};
+type Props = { rf: RedFlag };
 
-export function RedFlagCard({ rf }: { rf: RedFlag }) {
+export function RedFlagCard({ rf }: Props) {
+  const config = NIVEL_CONFIG[rf.nivel];
+
   return (
-    <Card className={cn("border-l-4", ACCENT_BORDA[rf.nivel])}>
-      <CardHeader>
-        <NivelBadge nivel={rf.nivel} className="mb-1 w-fit" />
-        <CardTitle>{rf.titulo}</CardTitle>
+    <Card className={cn("h-full border-l-4", config.acento)}>
+      <CardHeader className="gap-2 pb-0">
+        <NivelBadge nivel={rf.nivel} className="w-fit" />
+        <h3 className="text-base font-semibold leading-snug">{rf.titulo}</h3>
       </CardHeader>
-      <CardContent className="flex flex-col gap-2">
-        <p>{rf.fraseSimples}</p>
-        <p className="text-xs text-muted-foreground">Fonte: {rf.fonte}</p>
+      <CardContent className="pt-3">
+        <p className="text-pretty text-[15px] leading-relaxed">{rf.fraseSimples}</p>
       </CardContent>
+      <CardFooter className="mt-auto border-t pt-3">
+        <p className="text-xs text-muted-foreground">Fonte: {rf.fonte}</p>
+      </CardFooter>
     </Card>
   );
 }

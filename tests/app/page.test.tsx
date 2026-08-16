@@ -1,26 +1,30 @@
 import { describe, it, expect, vi } from "vitest";
+import { renderToStaticMarkup } from "react-dom/server";
 
-// next/link is a CJS module with a circular structure that breaks JSON.stringify;
-// mock it as a plain anchor so the rendered element can be serialized in tests.
+// Mocks leves para módulos do Next/ícones, para renderizar em ambiente node.
 vi.mock("next/link", () => ({
-  default: ({ children, href }: { children: unknown; href: string }) => ({
-    type: "a",
-    props: { href, children },
-  }),
+  default: ({ children, ...props }: { children?: unknown } & Record<string, unknown>) => (
+    <a {...(props as Record<string, unknown>)}>{children as never}</a>
+  ),
+}));
+vi.mock("next/image", () => ({
+  default: (props: Record<string, unknown>) => <img {...props} />,
 }));
 
-vi.mock("../../src/data/parlamentares", () => ({
+vi.mock("@/lib/dados", () => ({
   listarParlamentares: vi.fn().mockResolvedValue([
-    { id: "1", nome: "Fulano", partido: "XPTO", uf: "SP", casa: "CAMARA", urlFoto: null },
+    { id: "1", nome: "Fulano de Tal", partido: "XPTO", uf: "SP", casa: "CAMARA", urlFoto: "/f.jpg" },
   ]),
 }));
 
-import Page from "../../src/app/page";
+import Page from "@/app/page";
 
 describe("Home", () => {
   it("renderiza a lista de parlamentares", async () => {
     const el = await Page({ searchParams: Promise.resolve({}) });
-    const json = JSON.stringify(el);
-    expect(json).toContain("Fulano");
+    const html = renderToStaticMarkup(el);
+    expect(html).toContain("Fulano de Tal");
+    expect(html).toContain("XPTO");
+    expect(html).toContain("Buscar");
   });
 });

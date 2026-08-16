@@ -1,37 +1,26 @@
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
-import type { Nivel } from "@/analysis/types";
+import { NIVEL_CONFIG } from "@/lib/nivel";
+import type { Nivel } from "@/lib/tipos";
 
-export const NIVEL_CONFIG: Record<Nivel, { rotulo: string; className: string }> = {
-  ok: {
-    rotulo: "Tudo certo",
-    className: "border-nivel-ok/30 bg-nivel-ok/10 text-nivel-ok",
-  },
-  atencao: {
-    rotulo: "Atenção",
-    className: "border-nivel-atencao/30 bg-nivel-atencao/10 text-nivel-atencao",
-  },
-  alerta: {
-    rotulo: "Sinal de alerta",
-    className: "border-nivel-alerta/30 bg-nivel-alerta/10 text-nivel-alerta",
-  },
-  sem_dado: {
-    rotulo: "Sem dados",
-    className: "border-nivel-sem-dado/30 bg-nivel-sem-dado/10 text-nivel-sem-dado",
-  },
+type Props = {
+  nivel: Nivel;
+  /** `geral` usa o rótulo mais longo, para o selo do perfil. */
+  variante?: "curto" | "geral";
+  className?: string;
 };
 
-export function NivelBadge({
-  nivel,
-  className,
-}: {
-  nivel: Nivel;
-  className?: string;
-}) {
+export function NivelBadge({ nivel, variante = "curto", className }: Props) {
   const config = NIVEL_CONFIG[nivel];
+  const texto = variante === "geral" ? config.rotuloGeral : config.rotulo;
+
   return (
-    <Badge variant="outline" className={cn(config.className, className)}>
-      {config.rotulo}
+    <Badge
+      variant="outline"
+      className={cn("gap-1.5 border font-semibold", config.badge, className)}
+    >
+      <span className={cn("size-1.5 rounded-full", config.ponto)} aria-hidden="true" />
+      {texto}
     </Badge>
   );
 }
