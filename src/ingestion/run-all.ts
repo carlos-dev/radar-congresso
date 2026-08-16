@@ -32,11 +32,17 @@ async function main() {
     }
   }
 
-  console.log("Ingerindo votações...");
+  // A API de votações da Câmara rejeita intervalos maiores que 3 meses,
+  // então usamos uma janela dos últimos ~89 dias (presença recente).
+  console.log("Ingerindo votações (últimos ~3 meses)...");
   const hoje = new Date();
-  const inicio = new Date(hoje.getFullYear(), 0, 1).toISOString().slice(0, 10);
+  const inicio = new Date(hoje.getTime() - 89 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
   const fim = hoje.toISOString().slice(0, 10);
-  await ingestVotacoes(inicio, fim);
+  try {
+    await ingestVotacoes(inicio, fim);
+  } catch (err) {
+    console.warn(`Falha ao ingerir votações: ${(err as Error).message}`);
+  }
 
   if (process.env.PORTAL_TRANSPARENCIA_API_KEY) {
     console.log("Ingerindo emendas...");
