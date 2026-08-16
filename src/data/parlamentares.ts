@@ -1,6 +1,7 @@
 import { prisma } from "../db/client";
 import type { Casa } from "@prisma/client";
 import { montarFicha, type Ficha } from "../analysis/ficha";
+import { ANO_REFERENCIA } from "../lib/config";
 
 export interface ParlamentarResumo {
   id: string;
@@ -24,8 +25,6 @@ export interface Perfil extends ParlamentarResumo {
   ficha: Ficha;
 }
 
-const ANO = 2025;
-
 export async function obterPerfil(id: string): Promise<Perfil | null> {
   const p = await prisma.parlamentar.findUnique({ where: { id } });
   if (!p) return null;
@@ -35,7 +34,7 @@ export async function obterPerfil(id: string): Promise<Perfil | null> {
   const [totalVotacoes, presencas, despesas, emendas, totalProposicoes] = await Promise.all([
     prisma.votacao.count({ where: { casa: p.casa } }),
     prisma.votoRegistro.count({ where: { parlamentarId: id, voto: { not: "AUSENTE" } } }),
-    prisma.despesa.findMany({ where: { parlamentarId: id, ano: ANO } }),
+    prisma.despesa.findMany({ where: { parlamentarId: id, ano: ANO_REFERENCIA } }),
     prisma.emenda.findMany({ where: { parlamentarId: id } }),
     prisma.proposicao.count({ where: { parlamentarId: id } }),
   ]);

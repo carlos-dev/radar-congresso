@@ -11,6 +11,9 @@ export function redFlagLegislativa(i: LegislativaInput): RedFlag {
     titulo: "Produção legislativa",
     fonte: "Câmara — Proposições de autoria",
   };
+  if (i.totalProposicoes === 0) {
+    return { ...base, nivel: "sem_dado", fraseSimples: "Sem dados de projetos de autoria no período." };
+  }
   const nivel: RedFlag["nivel"] =
     i.totalProposicoes < i.mediaProposicoesPares * 0.25 ? "atencao" : "ok";
   const frase =

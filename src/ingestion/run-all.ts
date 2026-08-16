@@ -5,12 +5,11 @@ import { ingestVotacoes } from "./camara/votacoes";
 import { ingestProposicoes } from "./camara/proposicoes";
 import { ingestSenadores } from "./senado/senadores";
 import { ingestEmendas } from "./transparencia/emendas";
+import { ANO_REFERENCIA } from "../lib/config";
 
 export function ordemDeIngestao(): string[] {
   return ["deputados", "senadores", "despesas", "proposicoes", "votacoes", "emendas"];
 }
-
-const ANO = 2025;
 
 async function main() {
   console.log("Ingerindo deputados...");
@@ -20,7 +19,7 @@ async function main() {
 
   const camara = await prisma.parlamentar.findMany({ where: { casa: "CAMARA" } });
   for (const dep of camara) {
-    await ingestDespesas(dep.id, dep.externalId, ANO);
+    await ingestDespesas(dep.id, dep.externalId, ANO_REFERENCIA);
     await ingestProposicoes(dep.id, dep.externalId);
   }
 
@@ -33,7 +32,7 @@ async function main() {
   if (process.env.PORTAL_TRANSPARENCIA_API_KEY) {
     console.log("Ingerindo emendas...");
     const todos = await prisma.parlamentar.findMany();
-    for (const p of todos) await ingestEmendas(p.id, p.nome, ANO).catch(() => 0);
+    for (const p of todos) await ingestEmendas(p.id, p.nome, ANO_REFERENCIA).catch(() => 0);
   } else {
     console.log("Pulei emendas (sem PORTAL_TRANSPARENCIA_API_KEY).");
   }
