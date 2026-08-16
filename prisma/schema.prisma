@@ -1,0 +1,97 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum Casa {
+  CAMARA
+  SENADO
+}
+
+enum Voto {
+  SIM
+  NAO
+  ABSTENCAO
+  OBSTRUCAO
+  AUSENTE
+}
+
+model Parlamentar {
+  id          String   @id @default(cuid())
+  externalId  String
+  casa        Casa
+  nome        String
+  nomeCivil   String?
+  partido     String?
+  uf          String?
+  cargo       String?
+  urlFoto     String?
+  despesas    Despesa[]
+  votos       VotoRegistro[]
+  proposicoes Proposicao[]
+  emendas     Emenda[]
+
+  @@unique([casa, externalId])
+}
+
+model Despesa {
+  id             String      @id @default(cuid())
+  parlamentar    Parlamentar @relation(fields: [parlamentarId], references: [id])
+  parlamentarId  String
+  ano            Int
+  mes            Int
+  tipo           String
+  fornecedorNome String
+  fornecedorDoc  String?
+  valor          Float
+  @@index([parlamentarId, ano])
+}
+
+model Votacao {
+  id         String         @id @default(cuid())
+  externalId String         @unique
+  casa       Casa           @default(CAMARA)
+  data       DateTime
+  descricao  String
+  votos      VotoRegistro[]
+}
+
+model VotoRegistro {
+  id            String      @id @default(cuid())
+  votacao       Votacao     @relation(fields: [votacaoId], references: [id])
+  votacaoId     String
+  parlamentar   Parlamentar @relation(fields: [parlamentarId], references: [id])
+  parlamentarId String
+  voto          Voto
+  @@unique([votacaoId, parlamentarId])
+  @@index([parlamentarId])
+}
+
+model Proposicao {
+  id            String      @id @default(cuid())
+  externalId    String      @unique
+  parlamentar   Parlamentar @relation(fields: [parlamentarId], references: [id])
+  parlamentarId String
+  tipo          String
+  ano           Int
+  ementa        String
+  virouLei      Boolean     @default(false)
+  @@index([parlamentarId])
+}
+
+model Emenda {
+  id                    String      @id @default(cuid())
+  parlamentar           Parlamentar @relation(fields: [parlamentarId], references: [id])
+  parlamentarId         String
+  ano                   Int
+  funcao                String?
+  municipioBeneficiario String?
+  uf                    String?
+  beneficiarioDoc       String?
+  valorEmpenhado        Float       @default(0)
+  valorPago             Float       @default(0)
+  @@index([parlamentarId, ano])
+}

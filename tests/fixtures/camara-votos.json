@@ -1,0 +1,9 @@
+{
+  "dados": [
+    { "tipoVoto": "Sim", "deputado_": { "id": 204554 } },
+    { "tipoVoto": "Não", "deputado_": { "id": 999 } },
+    { "tipoVoto": "Obstrução", "deputado_": { "id": 111 } },
+    { "tipoVoto": "Abstenção", "deputado_": { "id": 222 } },
+    { "tipoVoto": "Art. 17", "deputado_": { "id": 333 } }
+  ]
+}
