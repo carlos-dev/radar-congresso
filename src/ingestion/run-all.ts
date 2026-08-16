@@ -19,9 +19,17 @@ async function main() {
   await ingestSenadores();
 
   const camara = await prisma.parlamentar.findMany({ where: { casa: "CAMARA" } });
+  console.log(`Ingerindo despesas e proposições de ${camara.length} deputados...`);
+  let i = 0;
   for (const dep of camara) {
-    await ingestDespesas(dep.id, dep.externalId, ANO_REFERENCIA);
-    await ingestProposicoes(dep.id, dep.externalId);
+    i++;
+    // Um deputado com dado atípico não pode abortar a ingestão inteira.
+    try {
+      await ingestDespesas(dep.id, dep.externalId, ANO_REFERENCIA);
+      await ingestProposicoes(dep.id, dep.externalId);
+    } catch (err) {
+      console.warn(`  [${i}/${camara.length}] falhou ${dep.nome} (${dep.externalId}): ${(err as Error).message}`);
+    }
   }
 
   console.log("Ingerindo votações...");
