@@ -52,11 +52,21 @@ export function parseEmendas(raw: TransparenciaEmenda[]): EmendaNormalizada[] {
 
 const BASE = "https://api.portaldatransparencia.gov.br/api-de-dados";
 
+// O filtro nomeAutor do Portal é case-sensitive e usa o nome parlamentar em
+// CAIXA ALTA e sem acento (ex.: "TABATA AMARAL"). Normalizamos para casar.
+export function normalizaNomeAutor(nome: string): string {
+  return nome
+    .normalize("NFD")
+    .replace(new RegExp("[\\u0300-\\u036f]", "g"), "")
+    .toUpperCase()
+    .trim();
+}
+
 export async function ingestEmendas(parlamentarId: string, nomeAutor: string, ano: number): Promise<number> {
   const key = process.env.PORTAL_TRANSPARENCIA_API_KEY;
   if (!key) throw new Error("PORTAL_TRANSPARENCIA_API_KEY não configurada");
   const raw = await fetchJson<TransparenciaEmenda[]>(
-    `${BASE}/emendas?ano=${ano}&nomeAutor=${encodeURIComponent(nomeAutor)}&pagina=1`,
+    `${BASE}/emendas?ano=${ano}&nomeAutor=${encodeURIComponent(normalizaNomeAutor(nomeAutor))}&pagina=1`,
     { headers: { "chave-api-dados": key } },
   );
   const emendas = parseEmendas(raw);

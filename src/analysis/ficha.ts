@@ -28,6 +28,11 @@ export function montarFicha(i: FichaInput): Ficha {
     redFlagEmendas(i.emendas),
     redFlagLegislativa(i.legislativa),
   ];
-  const nivelGeral = redFlags.reduce<Nivel>((acc, rf) => pior(acc, rf.nivel), "sem_dado");
-  return { nivelGeral: nivelGeral === "sem_dado" ? "ok" : nivelGeral, redFlags };
+  // Nível geral = o pior entre os sinais QUE TÊM dado. Se nenhum sinal tem
+  // dado, o geral é "sem_dado" (não "ok") — não temos base para dizer que
+  // está tudo certo, apenas que faltam dados.
+  const comDado = redFlags.filter((rf) => rf.nivel !== "sem_dado");
+  const nivelGeral: Nivel =
+    comDado.length === 0 ? "sem_dado" : comDado.reduce<Nivel>((acc, rf) => pior(acc, rf.nivel), "ok");
+  return { nivelGeral, redFlags };
 }
