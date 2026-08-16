@@ -4,10 +4,12 @@ import { TopNav } from "@/components/TopNav";
 import { RadarBars } from "@/components/RadarBars";
 import { RedFlagCard } from "@/components/RedFlagCard";
 import { AvisoEtico } from "@/components/AvisoEtico";
+import { InvestigacaoSecao } from "@/components/InvestigacaoSecao";
 import { SiteFooter } from "@/components/SiteFooter";
 import { NIVEL_CONFIG } from "@/lib/nivel";
 import { iniciais } from "@/lib/iniciais";
 import { obterPerfil } from "@/lib/dados";
+import { obterConexoes } from "@/data/investigacao";
 
 type Props = { params: Promise<{ id: string }> };
 
@@ -15,6 +17,8 @@ export default async function PerfilPage({ params }: Props) {
   const { id } = await params;
   const perfil = await obterPerfil(id);
   if (!perfil) notFound();
+
+  const conexoes = await obterConexoes(id);
 
   const partidoUf = [perfil.partido, perfil.uf].filter(Boolean).join("-") || "Sem partido";
   const casaLonga = perfil.casa === "SENADO" ? "Senado Federal" : "Câmara dos Deputados";
@@ -104,6 +108,8 @@ export default async function PerfilPage({ params }: Props) {
             </li>
           ))}
         </ol>
+
+        <InvestigacaoSecao conexoes={conexoes} />
 
         <div className="mt-8">
           <AvisoEtico />
