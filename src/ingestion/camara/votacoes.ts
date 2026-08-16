@@ -42,7 +42,7 @@ export async function ingestVotacoes(dataInicio: string, dataFim: string): Promi
     const votacao = await prisma.votacao.upsert({
       where: { externalId: v.id },
       update: { descricao: v.descricao },
-      create: { externalId: v.id, data: new Date(v.data), descricao: v.descricao },
+      create: { externalId: v.id, casa: "CAMARA", data: new Date(v.data), descricao: v.descricao },
     });
     const votosRaw = await fetchJson<{ dados: CamaraVoto[] }>(`${BASE}/votacoes/${v.id}/votos`);
     const votos = parseVotos(votosRaw);

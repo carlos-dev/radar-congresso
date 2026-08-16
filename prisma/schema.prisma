@@ -53,6 +53,7 @@ model Despesa {
 model Votacao {
   id         String         @id @default(cuid())
   externalId String         @unique
+  casa       Casa           @default(CAMARA)
   data       DateTime
   descricao  String
   votos      VotoRegistro[]
