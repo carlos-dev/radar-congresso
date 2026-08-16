@@ -3,6 +3,21 @@ import type { Casa } from "@prisma/client";
 import { montarFicha, type Ficha } from "../analysis/ficha";
 import { ANO_REFERENCIA } from "../lib/config";
 
+// Soma `valueFn` agrupando por `keyFn`, preservando a ordem de primeira
+// aparição das chaves. Retorna as entradas [chave, soma].
+function groupSum<T>(
+  items: T[],
+  keyFn: (item: T) => string,
+  valueFn: (item: T) => number,
+): [string, number][] {
+  const soma = new Map<string, number>();
+  for (const item of items) {
+    const chave = keyFn(item);
+    soma.set(chave, (soma.get(chave) ?? 0) + valueFn(item));
+  }
+  return [...soma];
+}
+
 export interface ParlamentarResumo {
   id: string;
   nome: string;
@@ -40,16 +55,13 @@ export async function obterPerfil(id: string): Promise<Perfil | null> {
   ]);
 
   const totalGasto = despesas.reduce((s, d) => s + d.valor, 0);
-  const porFornecedorMap = new Map<string, number>();
-  for (const d of despesas) porFornecedorMap.set(d.fornecedorNome, (porFornecedorMap.get(d.fornecedorNome) ?? 0) + d.valor);
-  const porFornecedor = [...porFornecedorMap].map(([nome, valor]) => ({ nome, valor }));
+  const porFornecedor = groupSum(despesas, (d) => d.fornecedorNome, (d) => d.valor)
+    .map(([nome, valor]) => ({ nome, valor }));
 
   const totalEmendas = emendas.reduce((s, e) => s + e.valorEmpenhado, 0);
-  const porMunicipioMap = new Map<string, number>();
-  for (const e of emendas)
-    if (e.municipioBeneficiario)
-      porMunicipioMap.set(e.municipioBeneficiario, (porMunicipioMap.get(e.municipioBeneficiario) ?? 0) + e.valorEmpenhado);
-  const porMunicipio = [...porMunicipioMap].map(([municipio, valor]) => ({ municipio, valor }));
+  const comMunicipio = emendas.filter((e) => e.municipioBeneficiario);
+  const porMunicipio = groupSum(comMunicipio, (e) => e.municipioBeneficiario!, (e) => e.valorEmpenhado)
+    .map(([municipio, valor]) => ({ municipio, valor }));
 
   // NOTE: as médias de pares são constantes de arranque (0.9 de presença,
   // R$300k de gasto, 20 proposições). Calcular as médias reais a partir do
