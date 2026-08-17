@@ -17,7 +17,7 @@ export interface Ranking {
   chave: string;
   titulo: string;
   subtitulo: string;
-  unidade: "brl" | "int";
+  unidade: "brl" | "int" | "pct";
   fonte: string;
   itens: ItemRanking[];
 }
@@ -36,7 +36,7 @@ type DetalheParlamentar = {
  * há poucos votos nominais ingeridos, ranking seria ruído, não informação.
  */
 export async function obterRankings(): Promise<Ranking[]> {
-  const [gastoRows, emendaRows, propRows] = await Promise.all([
+  const [gastoRows, emendaRows, propRows, totalVotacoes, presencaRows] = await Promise.all([
     prisma.despesa.groupBy({
       by: ["parlamentarId"],
       where: { ano: ANO_REFERENCIA },
@@ -56,10 +56,32 @@ export async function obterRankings(): Promise<Ranking[]> {
       orderBy: { _count: { parlamentarId: "desc" } },
       take: 10,
     }),
+    prisma.votacao.count({ where: { casa: "CAMARA", votos: { some: {} } } }),
+    prisma.votoRegistro.groupBy({ by: ["parlamentarId"], _count: { _all: true } }),
   ]);
 
+  // Faltas = fração de votações de plenário sem voto registrado. Sem dados de
+  // posse/licença, não dá para distinguir um faltoso de um suplente/ministro
+  // licenciado. Para não acusar injustamente, só rankeamos quem esteve
+  // presente em ao menos 70% das votações (titular claramente ativo) — entre
+  // esses, quem mais faltou.
+  const PISO_PRESENCA = 0.7;
+  const faltasTop = totalVotacoes
+    ? presencaRows
+        .filter((r) => r._count._all >= totalVotacoes * PISO_PRESENCA)
+        .map((r) => ({
+          parlamentarId: r.parlamentarId,
+          taxa: (totalVotacoes - r._count._all) / totalVotacoes,
+        }))
+        .filter((x) => x.taxa > 0)
+        .sort((a, b) => b.taxa - a.taxa)
+        .slice(0, 10)
+    : [];
+
   const ids = [
-    ...new Set([...gastoRows, ...emendaRows, ...propRows].map((r) => r.parlamentarId)),
+    ...new Set(
+      [...gastoRows, ...emendaRows, ...propRows, ...faltasTop].map((r) => r.parlamentarId),
+    ),
   ];
   const ps = await prisma.parlamentar.findMany({
     where: { id: { in: ids } },
@@ -89,6 +111,14 @@ export async function obterRankings(): Promise<Ranking[]> {
       unidade: "brl",
       fonte: "Câmara — CEAP",
       itens: monta(gastoRows, (r) => (r as (typeof gastoRows)[number])._sum.valor ?? 0),
+    },
+    {
+      chave: "faltas",
+      titulo: "Quem mais faltou às votações",
+      subtitulo: "Entre titulares presentes em ≥70% das votações de plenário (2023–2025)",
+      unidade: "pct",
+      fonte: "Câmara — votações",
+      itens: monta(faltasTop, (r) => (r as (typeof faltasTop)[number]).taxa),
     },
     {
       chave: "emendas",

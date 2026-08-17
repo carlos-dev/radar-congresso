@@ -17,7 +17,7 @@ const brl = (n: number) =>
   n.toLocaleString("pt-BR", { style: "currency", currency: "BRL", maximumFractionDigits: 0 });
 
 const formata = (unidade: Ranking["unidade"], v: number) =>
-  unidade === "brl" ? brl(v) : v.toLocaleString("pt-BR");
+  unidade === "brl" ? brl(v) : unidade === "pct" ? `${Math.round(v * 100)}%` : v.toLocaleString("pt-BR");
 
 // Ouro/prata/bronze para o pódio; demais em cinza.
 const CORES_POSICAO = ["#caa53d", "#8b9099", "#b07a49"];
@@ -59,9 +59,10 @@ export default async function RankingsPage() {
         </div>
 
         <p className="mt-10 max-w-[70ch] text-[13px]" style={{ color: "var(--ds-muted)" }}>
-          Não há ranking de presença: a base de votações nominais ingerida ainda é parcial, e um
-          ranking sobre ela seria enganoso. Cota e projetos cobrem a Câmara; emendas cobrem as duas
-          casas.
+          Cota, projetos e faltas cobrem a Câmara; emendas cobrem as duas casas. Como não temos dados
+          de licença/posse, o ranking de faltas considera só titulares presentes em pelo menos 70%
+          das votações de plenário — assim um ministro licenciado ou suplente não aparece como
+          “faltoso”.
         </p>
       </main>
 
