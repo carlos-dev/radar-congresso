@@ -116,7 +116,7 @@ export default async function PerfilPage({ params }: Props) {
         <ol className="grid grid-cols-[repeat(auto-fit,minmax(320px,1fr))] gap-4">
           {perfil.ficha.redFlags.map((rf, i) => (
             <li key={rf.id} className="flex">
-              <RedFlagCard rf={rf} numero={i + 1} />
+              <RedFlagCard rf={rf} numero={i + 1} idParlamentar={perfil.id} />
             </li>
           ))}
         </ol>
