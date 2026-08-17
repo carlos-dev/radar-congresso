@@ -55,12 +55,19 @@ model Despesa {
 }
 
 model Votacao {
-  id         String         @id @default(cuid())
-  externalId String         @unique
-  casa       Casa           @default(CAMARA)
-  data       DateTime
-  descricao  String
-  votos      VotoRegistro[]
+  id          String         @id @default(cuid())
+  externalId  String         @unique
+  casa        Casa           @default(CAMARA)
+  data        DateTime
+  descricao   String
+  votosSim    Int?
+  votosNao    Int?
+  votosOutros Int?
+  tipo        String? // PEC, PLP, PL, MPV, ... (inferido da descrição)
+  // Curadoria (híbrido): true força destaque, false oculta, null = heurística.
+  destaque    Boolean?
+  titulo      String? // rótulo curado em linguagem clara (null = usa a descrição)
+  votos       VotoRegistro[]
 }
 
 model VotoRegistro {

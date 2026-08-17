@@ -7,6 +7,7 @@ import {
   type CotaDetalhe, type ProjetosPagina, type VotacoesDetalhe, type EmendasDetalhe,
 } from "@/data/detalhe";
 import { StatRow, StatCard, MiniColunas, BarraLinha } from "@/components/detalhe";
+import { votacoesEmDestaque, comoVotou, type VotacaoDestaque, type VotoEm } from "@/data/votacoes";
 
 const TEMAS = ["cota", "projetos", "votacoes", "emendas"] as const;
 type Tema = (typeof TEMAS)[number];
@@ -45,7 +46,11 @@ export default async function DetalhePage({ params, searchParams }: Props) {
   let conteudo: ReactNode = null;
   if (t === "cota") conteudo = <CotaView data={await detalheCota(id, ANO)} />;
   else if (t === "projetos") conteudo = <ProjetosView data={await listaProjetos(id, pagina)} pagina={pagina} />;
-  else if (t === "votacoes") conteudo = <VotacoesView data={await listaVotacoes(id)} />;
+  else if (t === "votacoes") {
+    const destaque = await votacoesEmDestaque();
+    const votos = await comoVotou(id, destaque.map((d) => d.id));
+    conteudo = <VotacoesView data={await listaVotacoes(id)} destaque={destaque} comoVotou={votos} />;
+  }
   else if (t === "emendas") conteudo = <EmendasView data={await listaEmendas(id)} />;
 
   return (
@@ -185,31 +190,51 @@ const VOTO_ROTULO: Record<string, string> = {
   SIM: "Sim", NAO: "Não", ABSTENCAO: "Abstenção", OBSTRUCAO: "Obstrução", AUSENTE: "Ausente",
 };
 const VOTO_COR: Record<string, string> = {
-  SIM: "var(--ds-ok-dark)", NAO: "var(--ds-alerta-dark)", AUSENTE: "var(--ds-muted)",
+  SIM: "var(--ds-ok-dark)", NAO: "var(--ds-alerta-dark)",
+  ABSTENCAO: "var(--ds-atencao-dark)", OBSTRUCAO: "var(--ds-atencao-dark)",
+  AUSENTE: "var(--ds-muted)",
+};
+const VOTO_BG: Record<string, string> = {
+  SIM: "var(--ds-ok-bg)", NAO: "var(--ds-alerta-bg)",
+  ABSTENCAO: "var(--ds-atencao-bg)", OBSTRUCAO: "var(--ds-atencao-bg)",
+  AUSENTE: "var(--ds-semdado-bg)",
 };
 
-function VotacoesView({ data }: { data: VotacoesDetalhe }) {
+function VotacoesView({
+  data,
+  destaque,
+  comoVotou,
+}: {
+  data: VotacoesDetalhe;
+  destaque: VotacaoDestaque[];
+  comoVotou: Map<string, VotoEm>;
+}) {
   if (data.total === 0) return <Aviso>Sem votações nominais registradas no período.</Aviso>;
   const qtd = (v: string) => data.resumo.find((r) => r.voto === v)?.qtd ?? 0;
-  const ausentes = qtd("AUSENTE");
-  const presentes = data.total - ausentes;
-  const taxa = data.total > 0 ? Math.round((presentes / data.total) * 100) : 0;
+  const taxa = data.total > 0 ? Math.round((qtd("SIM") + qtd("NAO") + qtd("ABSTENCAO") + qtd("OBSTRUCAO")) / data.total * 100) : 0;
   return (
     <>
       <StatRow>
-        <StatCard rotulo="Votações nominais" valor={String(data.total)} />
-        <StatCard
-          rotulo="Presença"
-          valor={`${taxa}%`}
-          cor={taxa >= 75 ? "var(--ds-ok-dark)" : "var(--ds-alerta-dark)"}
-        />
+        <StatCard rotulo="Votações (plenário)" valor={String(data.total)} />
         <StatCard rotulo="Votou Sim" valor={String(qtd("SIM"))} cor="var(--ds-ok-dark)" />
         <StatCard rotulo="Votou Não" valor={String(qtd("NAO"))} cor="var(--ds-alerta-dark)" />
+        <StatCard rotulo="Obstrução" valor={String(qtd("OBSTRUCAO"))} cor="var(--ds-atencao-dark)" />
       </StatRow>
 
-      <p className="mt-4 text-sm" style={{ color: "var(--ds-muted)" }}>
-        Apenas votações nominais (com voto individual registrado). A cobertura é parcial.
-      </p>
+      {destaque.length > 0 ? (
+        <>
+          <SecaoTitulo>Votações que importam — como votou</SecaoTitulo>
+          <p className="mb-3 max-w-[65ch] text-[13px]" style={{ color: "var(--ds-muted)" }}>
+            Selecionadas por relevância (peso da matéria, placar apertado e participação) e curadoria.
+            Não é a lista completa — é onde o voto mais pesa.
+          </p>
+          <ul className="flex flex-col gap-3">
+            {destaque.map((v) => (
+              <DestaqueVotacaoCard key={v.id} v={v} voto={comoVotou.get(v.id) ?? "AUSENTE"} />
+            ))}
+          </ul>
+        </>
+      ) : null}
 
       <SecaoTitulo>Votos mais recentes</SecaoTitulo>
       <ul className="mt-2 divide-y" style={{ borderColor: "var(--ds-hair)" }}>
@@ -227,8 +252,63 @@ function VotacoesView({ data }: { data: VotacoesDetalhe }) {
           </li>
         ))}
       </ul>
-      <Fonte>Fonte: Câmara — votações.</Fonte>
+      <Fonte>Fonte: Câmara — votações de plenário (2023–2025).</Fonte>
     </>
+  );
+}
+
+function DestaqueVotacaoCard({ v, voto }: { v: VotacaoDestaque; voto: VotoEm }) {
+  const placar =
+    v.votosSim != null && v.votosNao != null ? `Sim ${v.votosSim} × ${v.votosNao} Não` : null;
+  return (
+    <li
+      className="rounded-lg border p-4"
+      style={{ borderColor: "var(--ds-hair)", backgroundColor: "var(--ds-card)" }}
+    >
+      <div className="flex items-start justify-between gap-4">
+        <div className="min-w-0">
+          <div
+            className="flex flex-wrap items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.06em]"
+            style={{ color: "var(--ds-muted)" }}
+          >
+            {v.tipo ? (
+              <span className="rounded-full px-2 py-0.5" style={{ backgroundColor: "var(--ds-hair)" }}>
+                {v.tipo}
+              </span>
+            ) : null}
+            <span>{dataBR(v.data)}</span>
+            {v.resultado ? (
+              <span
+                style={{
+                  color: v.resultado === "aprovada" ? "var(--ds-ok-dark)" : "var(--ds-alerta-dark)",
+                }}
+              >
+                {v.resultado}
+              </span>
+            ) : null}
+          </div>
+          <p className="mt-1.5 text-pretty text-[15px] font-semibold leading-snug" style={{ color: "var(--ds-ink)" }}>
+            {v.titulo}
+          </p>
+          {placar ? (
+            <p className="mt-1 text-[12px] tabular-nums" style={{ color: "var(--ds-muted)" }}>
+              {placar}
+            </p>
+          ) : null}
+        </div>
+        <span className="shrink-0 text-right">
+          <span className="block text-[10px] uppercase tracking-[0.08em]" style={{ color: "var(--ds-muted)" }}>
+            votou
+          </span>
+          <span
+            className="mt-1 inline-block rounded-full px-3 py-1 text-[13px] font-bold"
+            style={{ backgroundColor: VOTO_BG[voto], color: VOTO_COR[voto] }}
+          >
+            {VOTO_ROTULO[voto] ?? voto}
+          </span>
+        </span>
+      </div>
+    </li>
   );
 }
 
