@@ -1,8 +1,10 @@
 import { fetchJson } from "../../lib/http";
 import { prisma } from "../../db/client";
+import { normalizaNome } from "../../lib/texto";
 
 export interface EmendaNormalizada {
   ano: number;
+  codigoEmenda: string | null;
   funcao: string | null;
   municipioBeneficiario: string | null;
   uf: string | null;
@@ -12,6 +14,7 @@ export interface EmendaNormalizada {
 
 interface TransparenciaEmenda {
   ano: number;
+  codigoEmenda?: string;
   funcao?: string;
   localidadeDoGasto?: string;
   valorEmpenhado?: string;
@@ -41,6 +44,7 @@ export function parseEmendas(raw: TransparenciaEmenda[]): EmendaNormalizada[] {
     const { municipio, uf } = splitLocalidade(e.localidadeDoGasto);
     return {
       ano: e.ano,
+      codigoEmenda: e.codigoEmenda ?? null,
       funcao: e.funcao ?? null,
       municipioBeneficiario: municipio,
       uf,
@@ -52,11 +56,17 @@ export function parseEmendas(raw: TransparenciaEmenda[]): EmendaNormalizada[] {
 
 const BASE = "https://api.portaldatransparencia.gov.br/api-de-dados";
 
+// O filtro nomeAutor do Portal é case-sensitive e usa o nome parlamentar em
+// CAIXA ALTA e sem acento (ex.: "TABATA AMARAL"). Normalizamos para casar.
+export function normalizaNomeAutor(nome: string): string {
+  return normalizaNome(nome);
+}
+
 export async function ingestEmendas(parlamentarId: string, nomeAutor: string, ano: number): Promise<number> {
   const key = process.env.PORTAL_TRANSPARENCIA_API_KEY;
   if (!key) throw new Error("PORTAL_TRANSPARENCIA_API_KEY não configurada");
   const raw = await fetchJson<TransparenciaEmenda[]>(
-    `${BASE}/emendas?ano=${ano}&nomeAutor=${encodeURIComponent(nomeAutor)}&pagina=1`,
+    `${BASE}/emendas?ano=${ano}&nomeAutor=${encodeURIComponent(normalizaNomeAutor(nomeAutor))}&pagina=1`,
     { headers: { "chave-api-dados": key } },
   );
   const emendas = parseEmendas(raw);

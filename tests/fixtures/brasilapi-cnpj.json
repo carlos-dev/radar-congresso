@@ -1,0 +1,8 @@
+{
+  "cnpj": "12345678000190",
+  "razao_social": "CONSTRUTORA XPTO LTDA",
+  "qsa": [
+    { "nome_socio": "João da Silva", "cnpj_cpf_do_socio": "***.456.789-**" },
+    { "nome_socio": "Ana Pereira", "cnpj_cpf_do_socio": "***.222.333-**" }
+  ]
+}

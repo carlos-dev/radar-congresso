@@ -25,6 +25,7 @@ model Parlamentar {
   casa        Casa
   nome        String
   nomeCivil   String?
+  cpf         String?
   partido     String?
   uf          String?
   cargo       String?
@@ -33,6 +34,9 @@ model Parlamentar {
   votos       VotoRegistro[]
   proposicoes Proposicao[]
   emendas     Emenda[]
+  doacoes     Doacao[]
+  favorecidos Favorecido[]
+  conexoes    Conexao[]
 
   @@unique([casa, externalId])
 }
@@ -87,6 +91,7 @@ model Emenda {
   parlamentar           Parlamentar @relation(fields: [parlamentarId], references: [id])
   parlamentarId         String
   ano                   Int
+  codigoEmenda          String?
   funcao                String?
   municipioBeneficiario String?
   uf                    String?
@@ -94,4 +99,55 @@ model Emenda {
   valorEmpenhado        Float       @default(0)
   valorPago             Float       @default(0)
   @@index([parlamentarId, ano])
+}
+
+model Doacao {
+  id            String      @id @default(cuid())
+  parlamentar   Parlamentar @relation(fields: [parlamentarId], references: [id])
+  parlamentarId String
+  doadorNome    String
+  doadorDoc     String
+  valor         Float
+  ano           Int
+  cargo         String?
+  @@index([parlamentarId])
+}
+
+model Favorecido {
+  id            String      @id @default(cuid())
+  parlamentar   Parlamentar @relation(fields: [parlamentarId], references: [id])
+  parlamentarId String
+  codigoEmenda  String
+  doc           String
+  nome          String
+  tipoPessoa    String      // "PF" | "PJ"
+  valorPago     Float
+  ano           Int
+  @@index([parlamentarId])
+  @@index([doc])
+}
+
+model Socio {
+  id     String @id @default(cuid())
+  cnpj   String
+  nome   String
+  doc    String
+  @@unique([cnpj, doc, nome])
+  @@index([cnpj])
+}
+
+model Conexao {
+  id            String      @id @default(cuid())
+  parlamentar   Parlamentar @relation(fields: [parlamentarId], references: [id])
+  parlamentarId String
+  tipo          String      // "DIRETA" | "SOCIO"
+  doadorNome    String
+  doadorDoc     String
+  empresaCnpj   String?
+  empresaNome   String?
+  valorDoacao   Float
+  valorEmenda   Float
+  ano           Int
+  confianca     String      // "alta" | "media" | "baixa"
+  @@index([parlamentarId])
 }

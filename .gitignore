@@ -40,3 +40,10 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# find-skills tooling (local)
+.agents/
+skills-lock.json
+
+# dados brutos baixados (TSE etc.) — não versionar
+/data/

@@ -36,7 +36,7 @@ interface CamaraVotacao {
 
 export async function ingestVotacoes(dataInicio: string, dataFim: string): Promise<void> {
   const lista = await fetchJson<{ dados: CamaraVotacao[] }>(
-    `${BASE}/votacoes?dataInicio=${dataInicio}&dataFim=${dataFim}&itens=100&ordem=DESC&ordenarPor=data`,
+    `${BASE}/votacoes?dataInicio=${dataInicio}&dataFim=${dataFim}&itens=100&ordem=DESC&ordenarPor=dataHoraRegistro`,
   );
   for (const v of lista.dados) {
     const votacao = await prisma.votacao.upsert({

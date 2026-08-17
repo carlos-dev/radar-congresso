@@ -6,33 +6,40 @@ describe("montarFicha", () => {
     const ficha = montarFicha({
       presenca: { totalVotacoes: 100, presencas: 60, mediaPresencaPares: 0.9 },
       despesas: { totalGasto: 0, mediaGastoPares: 9000, porFornecedor: [] },
-      emendas: { total: 0, porMunicipio: [] },
+      emendas: { total: 0, porBeneficiario: [] },
       legislativa: { totalProposicoes: 25, mediaProposicoesPares: 20 },
     });
     expect(ficha.nivelGeral).toBe("alerta");
     expect(ficha.redFlags).toHaveLength(4);
   });
 
-  it("remapeia sem_dado geral para 'ok' (presença/despesas/emendas sem dado, legislativa ok)", () => {
-    // NOTA: redFlagLegislativa nunca retorna "sem_dado" (não há esse nível para produção),
-    // então não é possível ter os 4 red flags em sem_dado via montarFicha. Este caso
-    // exercita o remap indiretamente: os três que suportam sem_dado ficam sem dado e a
-    // legislativa fica ok, resultando em nivelGeral "ok".
+  it("nivelGeral é 'sem_dado' quando NENHUM sinal tem dado", () => {
+    // Sem base nenhuma, não dizemos que está "tudo certo" — dizemos que faltam dados.
     const ficha = montarFicha({
       presenca: { totalVotacoes: 0, presencas: 0, mediaPresencaPares: 0.9 },
       despesas: { totalGasto: 0, mediaGastoPares: 9000, porFornecedor: [] },
-      emendas: { total: 0, porMunicipio: [] },
-      legislativa: { totalProposicoes: 25, mediaProposicoesPares: 20 },
+      emendas: { total: 0, porBeneficiario: [] },
+      legislativa: { totalProposicoes: 0, mediaProposicoesPares: 20 },
+    });
+    expect(ficha.redFlags.map((r) => r.nivel)).toEqual(["sem_dado", "sem_dado", "sem_dado", "sem_dado"]);
+    expect(ficha.nivelGeral).toBe("sem_dado");
+  });
+
+  it("ignora sinais sem_dado ao calcular o geral (usa só os que têm dado)", () => {
+    const ficha = montarFicha({
+      presenca: { totalVotacoes: 0, presencas: 0, mediaPresencaPares: 0.9 }, // sem_dado
+      despesas: { totalGasto: 0, mediaGastoPares: 9000, porFornecedor: [] }, // sem_dado
+      emendas: { total: 0, porBeneficiario: [] }, // sem_dado
+      legislativa: { totalProposicoes: 25, mediaProposicoesPares: 20 }, // ok
     });
     expect(ficha.nivelGeral).toBe("ok");
-    expect(ficha.redFlags.map((r) => r.nivel)).toEqual(["sem_dado", "sem_dado", "sem_dado", "ok"]);
   });
 
   it("nivelGeral é 'ok' quando tudo ok/sem_dado", () => {
     const ficha = montarFicha({
       presenca: { totalVotacoes: 100, presencas: 95, mediaPresencaPares: 0.9 },
       despesas: { totalGasto: 0, mediaGastoPares: 9000, porFornecedor: [] },
-      emendas: { total: 0, porMunicipio: [] },
+      emendas: { total: 0, porBeneficiario: [] },
       legislativa: { totalProposicoes: 25, mediaProposicoesPares: 20 },
     });
     expect(ficha.nivelGeral).toBe("ok");
