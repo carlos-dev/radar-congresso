@@ -18,7 +18,13 @@ vi.mock("@/data/parlamentares", () => ({
   }),
 }));
 vi.mock("@/data/detalhe", () => ({
-  detalheCota: vi.fn().mockResolvedValue({ total: 500, fornecedores: [{ nome: "Forn A", doc: "1", total: 500, qtd: 2 }] }),
+  detalheCota: vi.fn().mockResolvedValue({
+    ano: 2025,
+    total: 500,
+    numFornecedores: 1,
+    porMes: Array.from({ length: 12 }, (_, i) => ({ mes: i + 1, total: i === 0 ? 500 : 0 })),
+    fornecedores: [{ nome: "Forn A", doc: "1", total: 500, qtd: 2 }],
+  }),
   listaProjetos: vi.fn(),
   listaVotacoes: vi.fn(),
   listaEmendas: vi.fn(),
