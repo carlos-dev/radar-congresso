@@ -1,8 +1,10 @@
 import type { RedFlag } from "./types";
+import { pctInt } from "./percentil";
 
 export interface LegislativaInput {
   totalProposicoes: number;
-  mediaProposicoesPares: number;
+  /** Fração de colegas que produziram MAIS (0..1). Maior = pior. */
+  percentilRuim: number;
 }
 
 export function redFlagLegislativa(i: LegislativaInput): RedFlag {
@@ -14,11 +16,11 @@ export function redFlagLegislativa(i: LegislativaInput): RedFlag {
   if (i.totalProposicoes === 0) {
     return { ...base, nivel: "sem_dado", fraseSimples: "Sem dados de projetos de autoria no período." };
   }
-  const nivel: RedFlag["nivel"] =
-    i.totalProposicoes < i.mediaProposicoesPares * 0.25 ? "atencao" : "ok";
+  // Produção baixa vira no máximo "atenção" (não é "alerta" de gravidade).
+  const nivel: RedFlag["nivel"] = i.percentilRuim >= 0.75 ? "atencao" : "ok";
   const frase =
     nivel === "ok"
       ? `Apresentou ${i.totalProposicoes} projetos — em linha com os colegas.`
-      : `Apresentou só ${i.totalProposicoes} projetos, bem menos que a média dos colegas.`;
+      : `Apresentou ${i.totalProposicoes} projetos — menos que ${pctInt(i.percentilRuim)}% dos colegas.`;
   return { ...base, nivel, fraseSimples: frase };
 }

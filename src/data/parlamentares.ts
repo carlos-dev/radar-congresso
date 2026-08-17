@@ -3,6 +3,11 @@ import type { Casa } from "@prisma/client";
 import { montarFicha, type Ficha } from "../analysis/ficha";
 import type { Nivel } from "../analysis/types";
 import { ANO_REFERENCIA } from "../lib/config";
+import {
+  calcularPercentisCasa,
+  PERCENTIS_ZERO,
+  type PercentisParlamentar,
+} from "./percentis";
 
 // Soma `valueFn` agrupando por `keyFn`, preservando a ordem de primeira
 // aparição das chaves. Retorna as entradas [chave, soma].
@@ -28,6 +33,8 @@ interface AgregadosParlamentar {
   despesas: { fornecedorNome: string; valor: number }[];
   beneficiarios: { nome: string; valorPago: number }[];
   totalProposicoes: number;
+  // Posição relativa aos pares da mesma casa (0..1, maior = pior).
+  percentis: PercentisParlamentar;
 }
 
 function fichaDeAgregados(a: AgregadosParlamentar): Ficha {
@@ -39,13 +46,13 @@ function fichaDeAgregados(a: AgregadosParlamentar): Ficha {
   const porBeneficiario = groupSum(a.beneficiarios, (b) => b.nome, (b) => b.valorPago)
     .map(([nome, valor]) => ({ nome, valor }));
 
-  // NOTE: as médias de pares são constantes de arranque (0.9 de presença,
-  // R$300k de gasto, 20 proposições). Calcular médias reais é fatia futura.
+  // Os limiares de nível usam o percentil REAL do parlamentar frente aos pares
+  // da mesma casa (calculado em `calcularPercentisCasa`), não mais constantes.
   return montarFicha({
-    presenca: { totalVotacoes: a.totalVotacoesCasa, presencas: a.presencas, mediaPresencaPares: 0.9 },
-    despesas: { totalGasto, mediaGastoPares: 300000, porFornecedor },
+    presenca: { totalVotacoes: a.totalVotacoesCasa, presencas: a.presencas, percentilRuim: a.percentis.presenca },
+    despesas: { totalGasto, percentilRuim: a.percentis.gasto, porFornecedor },
     emendas: { total: totalEmendas, porBeneficiario },
-    legislativa: { totalProposicoes: a.totalProposicoes, mediaProposicoesPares: 20 },
+    legislativa: { totalProposicoes: a.totalProposicoes, percentilRuim: a.percentis.proposicoes },
   });
 }
 
@@ -79,13 +86,15 @@ export async function obterPerfil(id: string): Promise<Perfil | null> {
   // registrado). A maioria das "votações" da Câmara é simbólica/sem voto
   // registrado; contá-las inflaria as "faltas" de todo mundo. Escopamos por
   // casa (parlamentar só vota na sua) e exigimos ao menos um voto registrado.
-  const [totalVotacoes, presencas, despesas, beneficiarios, totalProposicoes] = await Promise.all([
-    prisma.votacao.count({ where: { casa: p.casa, votos: { some: {} } } }),
-    prisma.votoRegistro.count({ where: { parlamentarId: id, voto: { not: "AUSENTE" } } }),
-    prisma.despesa.findMany({ where: { parlamentarId: id, ano: ANO_REFERENCIA } }),
-    prisma.favorecido.findMany({ where: { parlamentarId: id }, select: { nome: true, valorPago: true } }),
-    prisma.proposicao.count({ where: { parlamentarId: id } }),
-  ]);
+  const [totalVotacoes, presencas, despesas, beneficiarios, totalProposicoes, percentisCasa] =
+    await Promise.all([
+      prisma.votacao.count({ where: { casa: p.casa, votos: { some: {} } } }),
+      prisma.votoRegistro.count({ where: { parlamentarId: id, voto: { not: "AUSENTE" } } }),
+      prisma.despesa.findMany({ where: { parlamentarId: id, ano: ANO_REFERENCIA } }),
+      prisma.favorecido.findMany({ where: { parlamentarId: id }, select: { nome: true, valorPago: true } }),
+      prisma.proposicao.count({ where: { parlamentarId: id } }),
+      calcularPercentisCasa(p.casa),
+    ]);
 
   const ficha = fichaDeAgregados({
     totalVotacoesCasa: totalVotacoes,
@@ -93,6 +102,7 @@ export async function obterPerfil(id: string): Promise<Perfil | null> {
     despesas,
     beneficiarios,
     totalProposicoes,
+    percentis: percentisCasa.get(id) ?? PERCENTIS_ZERO,
   });
 
   return {
@@ -142,9 +152,12 @@ export async function listarComRadar(opts: ListarComRadarOpts = {}): Promise<Per
   if (ps.length === 0) return [];
 
   const ids = ps.map((p) => p.id);
+  // Percentis são relativos a TODA a casa, não só aos 100 do resultado; por
+  // isso calculamos por casa presente (não por `ids`).
+  const casasPresentes = [...new Set(ps.map((p) => p.casa))];
 
   // Agregações em lote sobre parlamentarId in ids.
-  const [votacaoPorCasaRows, presencaRows, despesasAll, beneficiariosAll, proposicaoRows] =
+  const [votacaoPorCasaRows, presencaRows, despesasAll, beneficiariosAll, proposicaoRows, percentisPorCasa] =
     await Promise.all([
       prisma.votacao.groupBy({ by: ["casa"], where: { votos: { some: {} } }, _count: { _all: true } }),
       prisma.votoRegistro.groupBy({
@@ -165,7 +178,14 @@ export async function listarComRadar(opts: ListarComRadarOpts = {}): Promise<Per
         where: { parlamentarId: { in: ids } },
         _count: { _all: true },
       }),
+      Promise.all(casasPresentes.map((c) => calcularPercentisCasa(c))),
     ]);
+
+  // Une os mapas por casa num só (chaveado por parlamentarId).
+  const percentisMap = new Map<string, PercentisParlamentar>();
+  for (const mapa of percentisPorCasa) {
+    for (const [pid, perc] of mapa) percentisMap.set(pid, perc);
+  }
 
   const votacaoPorCasa = new Map<Casa, number>();
   for (const r of votacaoPorCasaRows) votacaoPorCasa.set(r.casa, r._count._all);
@@ -197,6 +217,7 @@ export async function listarComRadar(opts: ListarComRadarOpts = {}): Promise<Per
       despesas: despesasPorId.get(p.id) ?? [],
       beneficiarios: beneficiariosPorId.get(p.id) ?? [],
       totalProposicoes: propMap.get(p.id) ?? 0,
+      percentis: percentisMap.get(p.id) ?? PERCENTIS_ZERO,
     });
     return { ...p, ficha };
   });

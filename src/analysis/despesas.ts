@@ -1,18 +1,15 @@
-import type { RedFlag } from "./types";
+import type { Nivel, RedFlag } from "./types";
+import { nivelPorPercentil, pctInt } from "./percentil";
 
 export interface DespesasInput {
   totalGasto: number;
-  mediaGastoPares: number;
+  /** Fração de colegas que gastaram MENOS (0..1). Maior = pior. */
+  percentilRuim: number;
   porFornecedor: Array<{ nome: string; valor: number }>;
 }
 
-// NOTA: limiar de concentração aqui é > 0.5 (atenção), diferente de emendas.ts
-// que usa >= 0.5. A diferença é intencional — não unificar sem revisar ambos.
-function nivelDespesas(concentracao: number, acimaMedia: boolean): RedFlag["nivel"] {
-  if (concentracao >= 0.7 || acimaMedia) return "alerta";
-  if (concentracao > 0.5) return "atencao";
-  return "ok";
-}
+const ORDEM: Nivel[] = ["sem_dado", "ok", "atencao", "alerta"];
+const pior = (a: Nivel, b: Nivel): Nivel => (ORDEM.indexOf(a) >= ORDEM.indexOf(b) ? a : b);
 
 export function redFlagDespesas(i: DespesasInput): RedFlag {
   const base = {
@@ -26,21 +23,18 @@ export function redFlagDespesas(i: DespesasInput): RedFlag {
 
   const maior = i.porFornecedor.reduce((m, f) => (f.valor > m.valor ? f : m), { nome: "", valor: 0 });
   const concentracao = maior.valor / i.totalGasto;
-  const pct = Math.round(concentracao * 100);
-  const acimaMedia = i.totalGasto > i.mediaGastoPares * 1.2;
-  const nivel = nivelDespesas(concentracao, acimaMedia);
+  const nivelGasto = nivelPorPercentil(i.percentilRuim);
+  const nivelConc: Nivel = concentracao >= 0.7 ? "alerta" : concentracao > 0.5 ? "atencao" : "ok";
+  const nivel = pior(nivelGasto, nivelConc);
 
   let frase: string;
   if (nivel === "ok") {
-    frase = "Gastos distribuídos e dentro da média dos colegas.";
-  } else if (acimaMedia && concentracao < 0.5) {
-    // Quando o gatilho é o total (não a concentração), lidera com o total.
-    frase = "O gasto total ficou acima da média dos colegas.";
+    frase = "Gastos dentro do normal e distribuídos.";
+  } else if (ORDEM.indexOf(nivelGasto) >= ORDEM.indexOf(nivelConc)) {
+    frase = `Gastou mais que ${pctInt(i.percentilRuim)}% dos colegas.`;
+    if (concentracao > 0.5) frase += ` E concentrou ${Math.round(concentracao * 100)}% em um fornecedor.`;
   } else {
-    frase =
-      `${pct}% do gasto foi para um único fornecedor (${maior.nome}).` +
-      (acimaMedia ? " O total também está acima da média." : "");
+    frase = `${Math.round(concentracao * 100)}% do gasto foi para um único fornecedor (${maior.nome}).`;
   }
-
   return { ...base, nivel, fraseSimples: frase };
 }
