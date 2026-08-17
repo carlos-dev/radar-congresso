@@ -57,12 +57,14 @@ export function MiniColunas({
       className="mt-4 rounded-lg border p-4"
       style={{ backgroundColor: "var(--ds-card)", borderColor: "var(--ds-hair)" }}
     >
-      <div className="flex items-end gap-1.5">
+      <div className="flex items-end justify-center gap-1.5 sm:gap-2">
         {dados.map((d, i) => {
           const alt = (d.valor / max) * 100;
           const destaque = i === idxMax && d.valor > 0;
           return (
-            <div key={i} className="flex min-w-0 flex-1 flex-col items-center gap-1">
+            // flex-1 preenche quando há muitas barras; max-w evita barra gorda
+            // quando há poucas (ex.: patrimônio com 2-3 anos).
+            <div key={i} className="flex min-w-0 flex-1 max-w-[72px] flex-col items-center gap-1">
               <span
                 className="h-[14px] text-[10px] font-semibold leading-none"
                 style={{ color: "var(--ds-emphasis)" }}
