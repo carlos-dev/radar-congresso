@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { TopNav } from "@/components/TopNav";
@@ -41,12 +42,23 @@ export default async function PerfilPage({ params }: Props) {
 
           <header className="flex flex-wrap items-start justify-between gap-x-10 gap-y-8 pb-24 pt-6">
             <div className="flex min-w-0 flex-1 basis-[24rem] items-start gap-5">
-              <span
-                className="flex size-[72px] shrink-0 items-center justify-center rounded-lg border text-[22px] font-semibold"
-                style={{ borderColor: "var(--ds-on-dark-24)" }}
-              >
-                {iniciais(perfil.nome)}
-              </span>
+              {perfil.urlFoto ? (
+                <Image
+                  src={perfil.urlFoto}
+                  alt=""
+                  width={72}
+                  height={72}
+                  className="size-[72px] shrink-0 rounded-lg border object-cover"
+                  style={{ borderColor: "var(--ds-on-dark-24)" }}
+                />
+              ) : (
+                <span
+                  className="flex size-[72px] shrink-0 items-center justify-center rounded-lg border text-[22px] font-semibold"
+                  style={{ borderColor: "var(--ds-on-dark-24)" }}
+                >
+                  {iniciais(perfil.nome)}
+                </span>
+              )}
               <div className="min-w-0">
                 <p
                   className="text-[11px] font-semibold uppercase tracking-[0.16em]"

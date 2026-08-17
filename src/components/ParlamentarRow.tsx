@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import type { CSSProperties } from "react";
 import { RadarBars } from "@/components/RadarBars";
 import { NIVEL_CONFIG } from "@/lib/nivel";
@@ -25,12 +26,23 @@ export function ParlamentarRow({ p }: Props) {
         } as CSSProperties
       }
     >
-      <span
-        className="flex size-[46px] items-center justify-center rounded-md border text-[15px] font-semibold"
-        style={{ borderColor: "var(--ds-hair)", color: "var(--ds-emphasis)" }}
-      >
-        {iniciais(p.nome)}
-      </span>
+      {p.urlFoto ? (
+        <Image
+          src={p.urlFoto}
+          alt=""
+          width={46}
+          height={46}
+          className="size-[46px] shrink-0 rounded-md border object-cover"
+          style={{ borderColor: "var(--ds-hair)" }}
+        />
+      ) : (
+        <span
+          className="flex size-[46px] items-center justify-center rounded-md border text-[15px] font-semibold"
+          style={{ borderColor: "var(--ds-hair)", color: "var(--ds-emphasis)" }}
+        >
+          {iniciais(p.nome)}
+        </span>
+      )}
 
       <span className="flex min-w-0 flex-col gap-0.5">
         <span className="truncate text-[17px] font-semibold">{p.nome}</span>
