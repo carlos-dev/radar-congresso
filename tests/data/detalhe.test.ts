@@ -25,16 +25,29 @@ describe("detalhe", () => {
   it("detalheCota agrega por fornecedor, ordenado por total", async () => {
     const r = await detalheCota(id, 2025);
     expect(r.total).toBe(600);
+    expect(r.numFornecedores).toBe(2);
     expect(r.fornecedores[0]).toMatchObject({ nome: "Forn A", total: 500, qtd: 2 });
     expect(r.fornecedores[1]).toMatchObject({ nome: "Forn B", total: 100, qtd: 1 });
   });
-  it("listaProjetos retorna as proposições com total", async () => {
+  it("detalheCota quebra o gasto por mês (12 entradas)", async () => {
+    const r = await detalheCota(id, 2025);
+    expect(r.porMes).toHaveLength(12);
+    expect(r.porMes[0]).toMatchObject({ mes: 1, total: 400 }); // 300 (A) + 100 (B)
+    expect(r.porMes[1]).toMatchObject({ mes: 2, total: 200 });
+    expect(r.porMes[2]).toMatchObject({ mes: 3, total: 0 });
+  });
+  it("listaProjetos retorna as proposições com total e quebra por ano", async () => {
     const r = await listaProjetos(id, 1);
     expect(r.total).toBe(1);
+    expect(r.virouLei).toBe(0);
+    expect(r.porAno).toContainEqual({ ano: 2024, total: 1 });
     expect(r.itens[0]).toMatchObject({ tipo: "PL", ano: 2024, ementa: "Projeto de teste." });
   });
-  it("listaEmendas agrega por beneficiário", async () => {
+  it("listaEmendas agrega por beneficiário com ano e total geral", async () => {
     const r = await listaEmendas(id);
-    expect(r[0]).toMatchObject({ nome: "Benef X", total: 5000 });
+    expect(r.total).toBe(5000);
+    expect(r.numBeneficiarios).toBe(1);
+    expect(r.porAno).toContainEqual({ ano: 2024, total: 5000 });
+    expect(r.beneficiarios[0]).toMatchObject({ nome: "Benef X", total: 5000, ano: 2024 });
   });
 });
