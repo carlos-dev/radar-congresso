@@ -17,6 +17,23 @@ describe("detectarConexoes", () => {
     expect(cx[0].valorEmenda).toBe(20000);
   });
 
+  it("casa CPF completo (TSE) com mascarado (sócio) pelos 6 dígitos do meio", () => {
+    // Doador com CPF completo 507.853.039-87 (11 díg.), sócio mascarado ***.853.039-**.
+    // A janela do meio de "50785303987" é "853039" — deve casar.
+    const cx = detectarConexoes({
+      doadores: [{ nome: "Ana Prado", doc: "507.853.039-87", valor: 4000, ano: 2022 }],
+      beneficiarios: [
+        {
+          doc: "98.765.432/0001-10", nome: "Prado Serviços", tipoPessoa: "PJ", valorPago: 500000, ano: 2024,
+          socios: [{ nome: "Ana Prado", doc: "***.853.039-**" }],
+        },
+      ],
+    });
+    expect(cx).toHaveLength(1);
+    expect(cx[0].tipo).toBe("SOCIO");
+    expect(cx[0].confianca).toBe("alta");
+  });
+
   it("match por SÓCIO: doador é sócio da empresa beneficiária", () => {
     const cx = detectarConexoes({
       doadores: [doador],

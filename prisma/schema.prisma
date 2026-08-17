@@ -25,6 +25,7 @@ model Parlamentar {
   casa        Casa
   nome        String
   nomeCivil   String?
+  cpf         String?
   partido     String?
   uf          String?
   cargo       String?

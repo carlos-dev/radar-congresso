@@ -10,6 +10,7 @@ import { ingestEmendas } from "./transparencia/emendas";
 import { ingestDoacoes } from "./tse/doacoes";
 import { ingestFavorecidos } from "./transparencia/favorecidos";
 import { enrichSocios } from "./receita/socios";
+import { enrichCpfs } from "./enrich-cpf";
 import { obterConexoes } from "../data/investigacao";
 import { ANO_REFERENCIA } from "../lib/config";
 
@@ -75,6 +76,14 @@ async function main() {
 // sócios (BrasilAPI, sob demanda) e o cruzamento em Conexao. Cada fase é
 // isolada em try/catch para não abortar as demais.
 async function mainInvestigacao() {
+  try {
+    console.log("Preenchendo CPFs dos parlamentares...");
+    const r = await enrichCpfs();
+    console.log(`  CPFs preenchidos: ${r.ok}/${r.total}`);
+  } catch (err) {
+    console.warn(`Falha ao preencher CPFs: ${(err as Error).message}`);
+  }
+
   try {
     for (const ano of ["2022", "2018"]) {
       const csv = `data/tse/receitas_${ano}.csv`;

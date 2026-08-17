@@ -36,20 +36,31 @@ export interface Conexao {
   confianca: Confianca;
 }
 
+// Janela comparável de um CPF: os 6 dígitos do meio. O TSE fornece o CPF
+// COMPLETO (11 dígitos); a base de sócios (Receita/BrasilAPI) fornece
+// MASCARADO (só os 6 do meio, ex.: ***.XXX.XXX-**). Reduzir ambos aos 6 do
+// meio permite casar as duas fontes. Retorna null quando não há janela de 6
+// (ex.: CNPJ de 14 dígitos ou fragmento inválido) — aí não dá para confirmar.
+function janelaCpf(doc: string): string | null {
+  const dig = soDigitos(doc);
+  if (dig.length === 11) return dig.slice(3, 9);
+  if (dig.length === 6) return dig;
+  return null;
+}
+
 function comparaPessoa(aNome: string, aDoc: string, bNome: string, bDoc: string): Confianca | null {
   const nomeA = normalizaNome(aNome);
   const nomeB = normalizaNome(bNome);
   if (!nomeA || nomeA !== nomeB) return null;
 
-  const digA = soDigitos(aDoc);
-  const digB = soDigitos(bDoc);
-  const MIN = 6; // um CPF mascarado expõe 6 dígitos; abaixo disso não dá para confirmar
-  if (digA.length >= MIN && digB.length >= MIN) {
-    // Ambos têm dígitos confiáveis: só é "alta" se forem exatamente iguais;
+  const chaveA = janelaCpf(aDoc);
+  const chaveB = janelaCpf(bDoc);
+  if (chaveA && chaveB) {
+    // Ambos têm a janela de 6 dígitos: só é "alta" se forem iguais;
     // dígitos diferentes = homônimo, rejeita.
-    return digA === digB ? "alta" : null;
+    return chaveA === chaveB ? "alta" : null;
   }
-  // Sem dígitos suficientes para confirmar nem rejeitar: cai para nome só.
+  // Sem janela comparável em pelo menos um lado: cai para nome só.
   return "media";
 }
 
