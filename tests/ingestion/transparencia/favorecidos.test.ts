@@ -1,13 +1,34 @@
 import { describe, it, expect } from "vitest";
-import { parseFavorecidos } from "../../../src/ingestion/transparencia/favorecidos";
-import fixture from "../../fixtures/transparencia-documentos.json";
+import { parseFavorecido } from "../../../src/ingestion/transparencia/favorecidos";
 
-describe("parseFavorecidos", () => {
-  it("normaliza favorecidos e classifica PF/PJ, marcando órgão público", () => {
-    const out = parseFavorecidos(fixture, 2024);
-    expect(out).toEqual([
-      { doc: "12.345.678/0001-90", nome: "CONSTRUTORA XPTO LTDA", tipoPessoa: "PJ", valorPago: 900000, ano: 2024, publico: false },
-      { doc: "00.111.222/0001-33", nome: "PREFEITURA MUNICIPAL DE EXEMPLO", tipoPessoa: "PJ", valorPago: 50000, ano: 2024, publico: true },
-    ]);
+describe("parseFavorecido", () => {
+  it("normaliza um favorecido privado (PJ)", () => {
+    const doc = {
+      codigoFavorecido: "12.345.678/0001-90",
+      nomeFavorecido: "CONSTRUTORA XPTO LTDA",
+      valor: "900.000,00",
+      fase: "Empenho",
+    };
+    expect(parseFavorecido(doc, 2024)).toEqual({
+      doc: "12.345.678/0001-90",
+      nome: "CONSTRUTORA XPTO LTDA",
+      tipoPessoa: "PJ",
+      valorPago: 900000,
+      ano: 2024,
+      publico: false,
+    });
+  });
+
+  it("marca órgão público (fundo/prefeitura)", () => {
+    const doc = {
+      codigoFavorecido: "11.323.261/0001-69",
+      nomeFavorecido: "FUNDO MUNICIPAL DE SAUDE",
+      valor: "50000.00",
+    };
+    expect(parseFavorecido(doc, 2024)?.publico).toBe(true);
+  });
+
+  it("retorna null sem documento", () => {
+    expect(parseFavorecido({ nomeFavorecido: "X" }, 2024)).toBeNull();
   });
 });

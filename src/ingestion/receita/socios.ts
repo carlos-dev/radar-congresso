@@ -25,9 +25,11 @@ export async function enrichSocios(cnpjFormatado: string): Promise<number> {
   const jaTem = await prisma.socio.count({ where: { cnpj } });
   if (jaTem > 0) return jaTem;
 
+  // A BrasilAPI (via CDN) responde 403 sem User-Agent — o fetch do Node não
+  // envia um por padrão, então definimos um explicitamente.
   const raw = await fetchJson<BrasilApiCnpj>(
     `https://brasilapi.com.br/api/cnpj/v1/${cnpj}`,
-    { retries: 2, delayMs: 800 },
+    { retries: 2, delayMs: 800, headers: { "User-Agent": "radar-congresso/1.0" } },
   ).catch(() => null);
   if (!raw) return 0;
 
