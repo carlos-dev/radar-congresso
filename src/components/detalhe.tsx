@@ -57,24 +57,31 @@ export function MiniColunas({
       className="mt-4 rounded-lg border p-4"
       style={{ backgroundColor: "var(--ds-card)", borderColor: "var(--ds-hair)" }}
     >
-      <div className="flex h-36 items-end gap-1.5">
+      <div className="flex items-end gap-1.5">
         {dados.map((d, i) => {
           const alt = (d.valor / max) * 100;
           const destaque = i === idxMax && d.valor > 0;
           return (
-            <div key={i} className="flex min-w-0 flex-1 flex-col items-center justify-end gap-1">
-              <span className="text-[10px] font-semibold" style={{ color: "var(--ds-emphasis)" }}>
-                {d.valor > 0 && destaque ? formata(d.valor) : ""}
+            <div key={i} className="flex min-w-0 flex-1 flex-col items-center gap-1">
+              <span
+                className="h-[14px] text-[10px] font-semibold leading-none"
+                style={{ color: "var(--ds-emphasis)" }}
+              >
+                {destaque ? formata(d.valor) : ""}
               </span>
-              <div
-                className="w-full rounded-t"
-                style={{
-                  height: `${alt}%`,
-                  minHeight: d.valor > 0 ? 4 : 0,
-                  backgroundColor: destaque ? "var(--ds-primary-dark)" : "var(--ds-primary)",
-                }}
-                title={`${d.rotulo}: ${formata(d.valor)}`}
-              />
+              {/* Trilha de ALTURA FIXA: a barra usa height:% e precisa de um pai
+                  com altura definida, senão a % colapsa pra zero. */}
+              <div className="flex h-32 w-full items-end">
+                <div
+                  className="w-full rounded-t"
+                  style={{
+                    height: `${alt}%`,
+                    minHeight: d.valor > 0 ? 4 : 0,
+                    backgroundColor: destaque ? "var(--ds-primary-dark)" : "var(--ds-primary)",
+                  }}
+                  title={`${d.rotulo}: ${formata(d.valor)}`}
+                />
+              </div>
               <span className="truncate text-[10px]" style={{ color: "var(--ds-muted)" }}>
                 {d.rotulo}
               </span>
