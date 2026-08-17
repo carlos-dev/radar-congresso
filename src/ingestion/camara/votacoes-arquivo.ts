@@ -16,15 +16,43 @@ export interface VotacaoMeta {
   data: Date;
   descricao: string;
   orgao: string;
+  votosSim: number | null;
+  votosNao: number | null;
+  votosOutros: number | null;
+  tipo: string | null;
 }
 
-/** Parseia o arquivo `votacoes-AAAA.csv` (metadados: data, descrição, órgão). */
+/**
+ * Infere o tipo da matéria a partir do texto da votação. É um proxy honesto —
+ * PEC/PLP/MP pesam mais na relevância que requerimentos/procedurais.
+ */
+export function inferirTipo(descricao: string): string | null {
+  const d = descricao.toLowerCase();
+  if (/emenda à constituição|\bpec\b/.test(d)) return "PEC";
+  if (/lei complementar|\bplp\b/.test(d)) return "PLP";
+  if (/medida provisória|\bmpv?\b/.test(d)) return "MPV";
+  if (/projeto de lei|\bpl\b/.test(d)) return "PL";
+  if (/decreto legislativo|\bpdl\b/.test(d)) return "PDL";
+  if (/projeto de resolução|\bprc\b/.test(d)) return "PRC";
+  return null;
+}
+
+const numOuNull = (s: string): number | null => {
+  const n = Number(s);
+  return Number.isFinite(n) ? n : null;
+};
+
+/** Parseia o arquivo `votacoes-AAAA.csv` (metadados: data, descrição, órgão, placar). */
 export function parseVotacoesMeta(csv: string): VotacaoMeta[] {
   return parseCsvObjetos(csv).map((r) => ({
     externalId: r["id"],
     data: new Date(r["dataHoraRegistro"] || r["data"]),
     descricao: r["descricao"] ?? "",
     orgao: r["siglaOrgao"] ?? "",
+    votosSim: numOuNull(r["votosSim"]),
+    votosNao: numOuNull(r["votosNao"]),
+    votosOutros: numOuNull(r["votosOutros"]),
+    tipo: inferirTipo(r["descricao"] ?? ""),
   }));
 }
 
@@ -85,10 +113,18 @@ export async function ingestVotacoesArquivo(
 
   for (const [idVotacao, votosDaVotacao] of porVotacao) {
     const meta = metaPorId.get(idVotacao)!;
+    const campos = {
+      descricao: meta.descricao,
+      data: meta.data,
+      votosSim: meta.votosSim,
+      votosNao: meta.votosNao,
+      votosOutros: meta.votosOutros,
+      tipo: meta.tipo,
+    };
     const votacao = await prisma.votacao.upsert({
       where: { externalId: idVotacao },
-      update: { descricao: meta.descricao, data: meta.data },
-      create: { externalId: idVotacao, casa: "CAMARA", data: meta.data, descricao: meta.descricao },
+      update: campos, // não toca em `destaque` (curadoria) ao reingerir
+      create: { externalId: idVotacao, casa: "CAMARA", ...campos },
     });
     // Regrava os votos desta votação (idempotência).
     await prisma.votoRegistro.deleteMany({ where: { votacaoId: votacao.id } });
