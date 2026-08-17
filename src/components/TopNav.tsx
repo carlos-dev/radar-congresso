@@ -16,14 +16,22 @@ export function TopNav({ updatedLabel }: Props) {
           Radar do Congresso
         </span>
       </Link>
-      {updatedLabel ? (
-        <span
-          className="text-[11px] uppercase tracking-[0.08em]"
-          style={{ color: "var(--ds-on-dark-48)" }}
+      <div className="flex items-center gap-5">
+        <Link
+          href="/rankings"
+          className="text-[12px] font-semibold uppercase tracking-[0.08em] transition-colors hover:text-[color:var(--ds-primary)]"
         >
-          {updatedLabel}
-        </span>
-      ) : null}
+          Rankings
+        </Link>
+        {updatedLabel ? (
+          <span
+            className="hidden text-[11px] uppercase tracking-[0.08em] sm:inline"
+            style={{ color: "var(--ds-on-dark-48)" }}
+          >
+            {updatedLabel}
+          </span>
+        ) : null}
+      </div>
     </nav>
   );
 }
