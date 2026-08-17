@@ -5,6 +5,13 @@ import { parseCsvObjetos } from "../../lib/csv";
 
 const CARGOS_FEDERAIS = new Set(["DEPUTADO FEDERAL", "SENADOR"]);
 
+// TSE usa tokens como "#NE", "#NULO#", "#NE#" para campos ainda não
+// determinados (ex.: candidatura registrada mas não julgada). Viram vazio.
+function limpaToken(v: string): string {
+  const s = (v ?? "").trim();
+  return s.startsWith("#") ? "" : s;
+}
+
 export interface CandidaturaTSE {
   sqCandidato: string;
   cpf: string;
@@ -25,8 +32,8 @@ export function parseCandidaturas(csv: string): CandidaturaTSE[] {
       cpf: soDigitos(r["NR_CPF_CANDIDATO"]),
       ano: Number(r["ANO_ELEICAO"]) || 0,
       cargo,
-      situacao: r["DS_SITUACAO_CANDIDATURA"] ?? "",
-      resultado: r["DS_SIT_TOT_TURNO"] ?? "",
+      situacao: limpaToken(r["DS_SITUACAO_CANDIDATURA"]),
+      resultado: limpaToken(r["DS_SIT_TOT_TURNO"]),
     });
   }
   return out;

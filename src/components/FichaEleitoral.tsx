@@ -62,7 +62,12 @@ export function FichaEleitoral({ dados }: { dados: PerfilEleitoral }) {
 
       <ul className="mt-4 divide-y" style={{ borderColor: "var(--ds-hair)" }}>
         {dados.candidaturas.map((c) => {
-          const inapto = (c.situacao ?? "").toUpperCase() === "INAPTO";
+          const sit = (c.situacao ?? "").toUpperCase();
+          const inapto = sit === "INAPTO";
+          const apto = sit === "APTO";
+          // sem situação = candidatura registrada, ainda não julgada (ex.: 2026)
+          const bg = inapto ? "var(--ds-alerta-bg)" : apto ? "var(--ds-ok-bg)" : "var(--ds-semdado-bg)";
+          const cor = inapto ? "var(--ds-alerta-dark)" : apto ? "var(--ds-ok-dark)" : "var(--ds-muted)";
           return (
             <li key={c.ano} className="flex items-center justify-between gap-4 py-2.5">
               <span className="min-w-0">
@@ -77,12 +82,9 @@ export function FichaEleitoral({ dados }: { dados: PerfilEleitoral }) {
               </span>
               <span
                 className="shrink-0 rounded-full px-2.5 py-1 text-[11px] font-semibold"
-                style={{
-                  backgroundColor: inapto ? "var(--ds-alerta-bg)" : "var(--ds-ok-bg)",
-                  color: inapto ? "var(--ds-alerta-dark)" : "var(--ds-ok-dark)",
-                }}
+                style={{ backgroundColor: bg, color: cor }}
               >
-                {c.situacao || "—"}
+                {c.situacao || "em análise"}
               </span>
             </li>
           );

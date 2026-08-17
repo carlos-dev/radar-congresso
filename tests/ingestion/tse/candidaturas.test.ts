@@ -7,14 +7,16 @@ describe("parseCandidaturas", () => {
       '"ANO_ELEICAO";"DS_CARGO";"SQ_CANDIDATO";"NR_CPF_CANDIDATO";"DS_SITUACAO_CANDIDATURA";"DS_SIT_TOT_TURNO"\n' +
       '"2022";"DEPUTADO FEDERAL";"SQ1";"11122233344";"APTO";"ELEITO POR QP"\n' +
       '"2022";"VEREADOR";"SQ2";"55566677788";"APTO";"ELEITO"\n' +
-      '"2022";"SENADOR";"SQ3";"99988877766";"INAPTO";"NÃO ELEITO"';
+      '"2026";"DEPUTADO FEDERAL";"SQ3";"99988877766";"#NE";"#NE"';
     const r = parseCandidaturas(csv);
     expect(r).toHaveLength(2); // vereador fora
     expect(r[0]).toEqual({
       sqCandidato: "SQ1", cpf: "11122233344", ano: 2022,
       cargo: "DEPUTADO FEDERAL", situacao: "APTO", resultado: "ELEITO POR QP",
     });
-    expect(r[1].situacao).toBe("INAPTO");
+    // tokens "#NE" do TSE (não julgado) viram string vazia
+    expect(r[1].situacao).toBe("");
+    expect(r[1].resultado).toBe("");
   });
 });
 
