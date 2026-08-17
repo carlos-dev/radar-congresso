@@ -131,7 +131,9 @@ function ProjetosView({ data, pagina }: { data: ProjetosPagina; pagina: number }
   if (data.total === 0) return <Aviso>Sem projetos de autoria registrados.</Aviso>;
   const paginas = Math.ceil(data.total / 30);
   const anos = data.porAno.map((a) => a.ano);
-  const periodo = anos.length ? `${Math.min(...anos)}–${Math.max(...anos)}` : "—";
+  const min = anos.length ? Math.min(...anos) : null;
+  const max = anos.length ? Math.max(...anos) : null;
+  const periodo = min == null ? "—" : min === max ? `${min}` : `${min}–${max}`;
   const taxaLei = data.total > 0 ? Math.round((data.virouLei / data.total) * 100) : 0;
   return (
     <>
