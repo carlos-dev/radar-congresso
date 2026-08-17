@@ -25,6 +25,8 @@ export interface ConexoesInput {
 }
 
 export interface Conexao {
+  /** De onde veio o dinheiro do beneficiário: emenda ou cota parlamentar. */
+  origem?: "emenda" | "cota";
   tipo: TipoConexao;
   doadorNome: string;
   doadorDoc: string;

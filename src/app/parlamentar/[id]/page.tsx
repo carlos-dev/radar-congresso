@@ -10,7 +10,7 @@ import { SiteFooter } from "@/components/SiteFooter";
 import { NIVEL_CONFIG } from "@/lib/nivel";
 import { iniciais } from "@/lib/iniciais";
 import { obterPerfil } from "@/lib/dados";
-import { obterConexoes } from "@/data/investigacao";
+import { obterConexoes, obterConexoesCota } from "@/data/investigacao";
 
 type Props = { params: Promise<{ id: string }> };
 
@@ -19,7 +19,8 @@ export default async function PerfilPage({ params }: Props) {
   const perfil = await obterPerfil(id);
   if (!perfil) notFound();
 
-  const conexoes = await obterConexoes(id);
+  const [conexoesEmenda, conexoesCota] = await Promise.all([obterConexoes(id), obterConexoesCota(id)]);
+  const conexoes = [...conexoesEmenda, ...conexoesCota];
 
   const partidoUf = [perfil.partido, perfil.uf].filter(Boolean).join("-") || "Sem partido";
   const casaLonga = perfil.casa === "SENADO" ? "Senado Federal" : "Câmara dos Deputados";
