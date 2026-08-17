@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { NIVEL_CONFIG } from "@/lib/nivel";
 import type { RedFlag } from "@/lib/tipos";
 
@@ -5,11 +6,23 @@ type Props = {
   rf: RedFlag;
   /** Posição (1..4) para o número grande do card. */
   numero: number;
+  /** Id do parlamentar, para o link "Ver detalhes". */
+  idParlamentar: string;
+};
+
+/** Tema da página de detalhe correspondente a cada sinal. */
+const TEMA_POR_FLAG: Record<string, string> = {
+  presenca: "votacoes",
+  despesas: "cota",
+  legislativa: "projetos",
+  emendas: "emendas",
 };
 
 /** Card numerado com acento no topo, pílula de nível, frase simples e fonte. */
-export function RedFlagCard({ rf, numero }: Props) {
+export function RedFlagCard({ rf, numero, idParlamentar }: Props) {
   const c = NIVEL_CONFIG[rf.nivel];
+  const tema = TEMA_POR_FLAG[rf.id];
+  const mostraDetalhe = rf.nivel !== "sem_dado" && Boolean(tema);
 
   return (
     <article
@@ -45,10 +58,22 @@ export function RedFlagCard({ rf, numero }: Props) {
         </p>
       </div>
 
-      <footer className="border-t px-5 py-3" style={{ borderColor: "var(--ds-hair)" }}>
+      <footer
+        className="flex items-center justify-between gap-3 border-t px-5 py-3"
+        style={{ borderColor: "var(--ds-hair)" }}
+      >
         <p className="text-[11px]" style={{ color: "var(--ds-muted)" }}>
           Fonte: {rf.fonte}
         </p>
+        {mostraDetalhe ? (
+          <Link
+            href={`/parlamentar/${idParlamentar}/${tema}`}
+            className="whitespace-nowrap text-[12px] font-semibold"
+            style={{ color: "var(--ds-primary-darker)" }}
+          >
+            Ver detalhes →
+          </Link>
+        ) : null}
       </footer>
     </article>
   );
