@@ -6,11 +6,13 @@ import { RadarBars } from "@/components/RadarBars";
 import { RedFlagCard } from "@/components/RedFlagCard";
 import { AvisoEtico } from "@/components/AvisoEtico";
 import { InvestigacaoSecao } from "@/components/InvestigacaoSecao";
+import { FichaEleitoral } from "@/components/FichaEleitoral";
 import { SiteFooter } from "@/components/SiteFooter";
 import { NIVEL_CONFIG } from "@/lib/nivel";
 import { iniciais } from "@/lib/iniciais";
 import { obterPerfil } from "@/lib/dados";
 import { obterConexoes, obterConexoesCota } from "@/data/investigacao";
+import { perfilEleitoral } from "@/data/eleitoral";
 
 type Props = { params: Promise<{ id: string }> };
 
@@ -19,7 +21,11 @@ export default async function PerfilPage({ params }: Props) {
   const perfil = await obterPerfil(id);
   if (!perfil) notFound();
 
-  const [conexoesEmenda, conexoesCota] = await Promise.all([obterConexoes(id), obterConexoesCota(id)]);
+  const [conexoesEmenda, conexoesCota, eleitoral] = await Promise.all([
+    obterConexoes(id),
+    obterConexoesCota(id),
+    perfilEleitoral(id),
+  ]);
   const conexoes = [...conexoesEmenda, ...conexoesCota];
 
   const partidoUf = [perfil.partido, perfil.uf].filter(Boolean).join("-") || "Sem partido";
@@ -123,6 +129,8 @@ export default async function PerfilPage({ params }: Props) {
         </ol>
 
         <InvestigacaoSecao conexoes={conexoes} />
+
+        <FichaEleitoral dados={eleitoral} />
 
         <div className="mt-8">
           <AvisoEtico />

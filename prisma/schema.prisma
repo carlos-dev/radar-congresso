@@ -37,8 +37,22 @@ model Parlamentar {
   doacoes     Doacao[]
   favorecidos Favorecido[]
   conexoes    Conexao[]
+  candidaturas Candidatura[]
 
   @@unique([casa, externalId])
+}
+
+model Candidatura {
+  id            String      @id @default(cuid())
+  parlamentar   Parlamentar @relation(fields: [parlamentarId], references: [id])
+  parlamentarId String
+  ano           Int
+  cargo         String
+  situacao      String? // DS_SITUACAO_CANDIDATURA (APTO / INAPTO...) — elegibilidade
+  resultado     String? // DS_SIT_TOT_TURNO (ELEITO / SUPLENTE / NÃO ELEITO)
+  patrimonio    Float? // soma dos bens declarados naquela eleição (autodeclarado)
+  @@unique([parlamentarId, ano])
+  @@index([parlamentarId])
 }
 
 model Despesa {
