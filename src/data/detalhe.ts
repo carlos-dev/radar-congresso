@@ -1,4 +1,5 @@
 import { prisma } from "../db/client";
+import { TIPOS_PROJETO } from "../lib/proposicoes";
 
 export interface CotaDetalhe {
   ano: number;
@@ -56,21 +57,24 @@ export interface ProjetosPagina {
 }
 
 export async function listaProjetos(parlamentarId: string, pagina = 1): Promise<ProjetosPagina> {
+  // Só matérias substantivas (PL, PLP, PEC...). Acessórios/procedurais ficam de fora.
+  const soProjetos = { tipo: { in: TIPOS_PROJETO } };
   const [pTotal, pLei, cTotal, cLei, porAnoRows, autorias] = await Promise.all([
-    prisma.autoria.count({ where: { parlamentarId, principal: true } }),
-    prisma.autoria.count({ where: { parlamentarId, principal: true, proposicao: { virouLei: true } } }),
-    prisma.autoria.count({ where: { parlamentarId, principal: false } }),
-    prisma.autoria.count({ where: { parlamentarId, principal: false, proposicao: { virouLei: true } } }),
+    prisma.autoria.count({ where: { parlamentarId, principal: true, proposicao: soProjetos } }),
+    prisma.autoria.count({ where: { parlamentarId, principal: true, proposicao: { ...soProjetos, virouLei: true } } }),
+    prisma.autoria.count({ where: { parlamentarId, principal: false, proposicao: soProjetos } }),
+    prisma.autoria.count({ where: { parlamentarId, principal: false, proposicao: { ...soProjetos, virouLei: true } } }),
     prisma.proposicao.groupBy({
       by: ["ano"],
-      where: { autorias: { some: { parlamentarId } } },
+      where: { ...soProjetos, autorias: { some: { parlamentarId } } },
       _count: { _all: true },
       orderBy: { ano: "asc" },
     }),
     prisma.autoria.findMany({
-      where: { parlamentarId },
+      where: { parlamentarId, proposicao: soProjetos },
       select: { principal: true, proposicao: { select: { tipo: true, ano: true, ementa: true, virouLei: true } } },
-      orderBy: [{ proposicao: { ano: "desc" } }],
+      // as que viraram lei primeiro, depois mais recentes
+      orderBy: [{ proposicao: { virouLei: "desc" } }, { proposicao: { ano: "desc" } }],
       skip: (pagina - 1) * 30,
       take: 30,
     }),

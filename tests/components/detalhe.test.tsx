@@ -19,6 +19,9 @@ describe("MiniColunas", () => {
     // maior valor → barra cheia; segundo → metade
     expect(html).toContain("height:100%");
     expect(html).toContain("height:50%");
+    // tooltip de hover com rótulo + valor
+    expect(html).toContain("jan: 100");
+    expect(html).toContain("group-hover:block");
   });
 
   it("valor zero não gera altura", () => {

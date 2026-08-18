@@ -64,7 +64,14 @@ export function MiniColunas({
           return (
             // flex-1 preenche quando há muitas barras; max-w evita barra gorda
             // quando há poucas (ex.: patrimônio com 2-3 anos).
-            <div key={i} className="flex min-w-0 flex-1 max-w-[72px] flex-col items-center gap-1">
+            <div key={i} className="group relative flex min-w-0 flex-1 max-w-[72px] flex-col items-center gap-1">
+              {/* Tooltip de hover (CSS puro, sem lib) */}
+              <div
+                className="pointer-events-none absolute bottom-full left-1/2 z-10 mb-1 hidden -translate-x-1/2 whitespace-nowrap rounded-md px-2 py-1 text-[11px] font-semibold shadow-md group-hover:block"
+                style={{ backgroundColor: "var(--ds-ink)", color: "var(--ds-on-dark)" }}
+              >
+                {d.rotulo}: {formata(d.valor)}
+              </div>
               <span
                 className="h-[14px] text-[10px] font-semibold leading-none"
                 style={{ color: "var(--ds-emphasis)" }}
@@ -75,13 +82,12 @@ export function MiniColunas({
                   com altura definida, senão a % colapsa pra zero. */}
               <div className="flex h-32 w-full items-end">
                 <div
-                  className="w-full rounded-t"
+                  className="w-full rounded-t transition-opacity group-hover:opacity-80"
                   style={{
                     height: `${alt}%`,
                     minHeight: d.valor > 0 ? 4 : 0,
                     backgroundColor: destaque ? "var(--ds-primary-dark)" : "var(--ds-primary)",
                   }}
-                  title={`${d.rotulo}: ${formata(d.valor)}`}
                 />
               </div>
               <span className="truncate text-[10px]" style={{ color: "var(--ds-muted)" }}>

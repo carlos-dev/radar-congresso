@@ -8,6 +8,7 @@ import {
   PERCENTIS_ZERO,
   type PercentisParlamentar,
 } from "./percentis";
+import { TIPOS_PROJETO } from "../lib/proposicoes";
 
 // Soma `valueFn` agrupando por `keyFn`, preservando a ordem de primeira
 // aparição das chaves. Retorna as entradas [chave, soma].
@@ -92,7 +93,7 @@ export async function obterPerfil(id: string): Promise<Perfil | null> {
       prisma.votoRegistro.count({ where: { parlamentarId: id, voto: { not: "AUSENTE" } } }),
       prisma.despesa.findMany({ where: { parlamentarId: id, ano: ANO_REFERENCIA } }),
       prisma.favorecido.findMany({ where: { parlamentarId: id }, select: { nome: true, valorPago: true } }),
-      prisma.autoria.count({ where: { parlamentarId: id, principal: true } }),
+      prisma.autoria.count({ where: { parlamentarId: id, principal: true, proposicao: { tipo: { in: TIPOS_PROJETO } } } }),
       calcularPercentisCasa(p.casa),
     ]);
 
@@ -175,7 +176,7 @@ export async function listarComRadar(opts: ListarComRadarOpts = {}): Promise<Per
       }),
       prisma.autoria.groupBy({
         by: ["parlamentarId"],
-        where: { parlamentarId: { in: ids }, principal: true },
+        where: { parlamentarId: { in: ids }, principal: true, proposicao: { tipo: { in: TIPOS_PROJETO } } },
         _count: { _all: true },
       }),
       Promise.all(casasPresentes.map((c) => calcularPercentisCasa(c))),

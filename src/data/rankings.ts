@@ -1,6 +1,7 @@
 import { prisma } from "../db/client";
 import type { Casa } from "@prisma/client";
 import { ANO_REFERENCIA } from "../lib/config";
+import { TIPOS_PROJETO } from "../lib/proposicoes";
 
 export interface ItemRanking {
   posicao: number;
@@ -52,7 +53,7 @@ export async function obterRankings(): Promise<Ranking[]> {
     }),
     prisma.autoria.groupBy({
       by: ["parlamentarId"],
-      where: { principal: true },
+      where: { principal: true, proposicao: { tipo: { in: TIPOS_PROJETO } } },
       _count: { parlamentarId: true },
       orderBy: { _count: { parlamentarId: "desc" } },
       take: 10,

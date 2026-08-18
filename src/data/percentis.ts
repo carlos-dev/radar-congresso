@@ -1,6 +1,7 @@
 import { prisma } from "../db/client";
 import type { Casa } from "@prisma/client";
 import { ANO_REFERENCIA } from "../lib/config";
+import { TIPOS_PROJETO } from "../lib/proposicoes";
 
 export interface PercentisParlamentar {
   /** Fração de colegas que faltaram MENOS (0..1). Maior = pior. */
@@ -40,7 +41,7 @@ export async function calcularPercentisCasa(casa: Casa): Promise<Map<string, Per
     }),
     prisma.autoria.groupBy({
       by: ["parlamentarId"],
-      where: { parlamentarId: { in: ids }, principal: true },
+      where: { parlamentarId: { in: ids }, principal: true, proposicao: { tipo: { in: TIPOS_PROJETO } } },
       _count: { _all: true },
     }),
   ]);
