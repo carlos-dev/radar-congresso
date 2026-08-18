@@ -8,11 +8,16 @@ import { parseCsvObjetos } from "../../lib/csv";
 // nova proposição" (isso é fusão, não virou lei).
 const VIROU_LEI = /transformad[oa] em (norma jur|lei|emenda)|promulgad|convertid[oa] em lei/i;
 
+/** True se a descrição de situação indica que a proposição virou lei/norma. */
+export function virouLeiPorSituacao(situacao: string): boolean {
+  return VIROU_LEI.test(situacao ?? "");
+}
+
 /** IDs (externalId) das proposições que viraram lei/norma, do arquivo em massa. */
 export function parseVirouLeiIds(csv: string): string[] {
   const ids: string[] = [];
   for (const r of parseCsvObjetos(csv)) {
-    if (VIROU_LEI.test(r["ultimoStatus_descricaoSituacao"] ?? "")) ids.push(r["id"]);
+    if (virouLeiPorSituacao(r["ultimoStatus_descricaoSituacao"] ?? "")) ids.push(r["id"]);
   }
   return ids;
 }

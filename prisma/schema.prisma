@@ -32,7 +32,7 @@ model Parlamentar {
   urlFoto     String?
   despesas    Despesa[]
   votos       VotoRegistro[]
-  proposicoes Proposicao[]
+  autorias    Autoria[]
   emendas     Emenda[]
   doacoes     Doacao[]
   favorecidos Favorecido[]
@@ -96,15 +96,27 @@ model VotoRegistro {
 }
 
 model Proposicao {
+  id         String    @id @default(cuid())
+  externalId String    @unique
+  tipo       String
+  ano        Int
+  ementa     String
+  virouLei   Boolean   @default(false)
+  autorias   Autoria[]
+  @@index([ano])
+}
+
+// Autoria (muitos-para-muitos): uma proposição tem vários autores; `principal`
+// marca o proponente (1ª assinatura). Distingue produção própria de co-autoria.
+model Autoria {
   id            String      @id @default(cuid())
-  externalId    String      @unique
+  proposicao    Proposicao  @relation(fields: [proposicaoId], references: [id], onDelete: Cascade)
+  proposicaoId  String
   parlamentar   Parlamentar @relation(fields: [parlamentarId], references: [id])
   parlamentarId String
-  tipo          String
-  ano           Int
-  ementa        String
-  virouLei      Boolean     @default(false)
-  @@index([parlamentarId])
+  principal     Boolean     @default(false)
+  @@unique([proposicaoId, parlamentarId])
+  @@index([parlamentarId, principal])
 }
 
 model Emenda {

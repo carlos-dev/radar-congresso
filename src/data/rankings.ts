@@ -50,8 +50,9 @@ export async function obterRankings(): Promise<Ranking[]> {
       orderBy: { _sum: { valorPago: "desc" } },
       take: 10,
     }),
-    prisma.proposicao.groupBy({
+    prisma.autoria.groupBy({
       by: ["parlamentarId"],
+      where: { principal: true },
       _count: { parlamentarId: true },
       orderBy: { _count: { parlamentarId: "desc" } },
       take: 10,
@@ -131,7 +132,7 @@ export async function obterRankings(): Promise<Ranking[]> {
     {
       chave: "projetos",
       titulo: "Quem mais apresentou projetos",
-      subtitulo: "Proposições de autoria · só Câmara",
+      subtitulo: "Proposições como autor principal · só Câmara",
       unidade: "int",
       fonte: "Câmara — proposições",
       itens: monta(propRows, (r) => (r as (typeof propRows)[number])._count.parlamentarId),

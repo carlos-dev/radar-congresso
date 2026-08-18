@@ -4,7 +4,6 @@ import { prisma } from "../db/client";
 import { ingestDeputados } from "./camara/deputados";
 import { ingestDespesas } from "./camara/despesas";
 import { ingestVotacoes } from "./camara/votacoes";
-import { ingestProposicoes } from "./camara/proposicoes";
 import { ingestSenadores } from "./senado/senadores";
 import { ingestEmendas } from "./transparencia/emendas";
 import { ingestDoacoes } from "./tse/doacoes";
@@ -33,18 +32,18 @@ async function main() {
   await ingestSenadores();
 
   const camara = await prisma.parlamentar.findMany({ where: { casa: "CAMARA" } });
-  console.log(`Ingerindo despesas e proposições de ${camara.length} deputados...`);
+  console.log(`Ingerindo despesas de ${camara.length} deputados...`);
   let i = 0;
   for (const dep of camara) {
     i++;
     // Um deputado com dado atípico não pode abortar a ingestão inteira.
     try {
       await ingestDespesas(dep.id, dep.externalId, ANO_REFERENCIA);
-      await ingestProposicoes(dep.id, dep.externalId);
     } catch (err) {
       console.warn(`  [${i}/${camara.length}] falhou ${dep.nome} (${dep.externalId}): ${(err as Error).message}`);
     }
   }
+  // Proposições/autorias vêm dos arquivos em massa: run-proposicoes-bulk.ts.
 
   // A API de votações da Câmara rejeita intervalos maiores que 3 meses,
   // então usamos uma janela dos últimos ~89 dias (presença recente).

@@ -128,35 +128,61 @@ function CotaView({ data }: { data: CotaDetalhe }) {
 }
 
 function ProjetosView({ data, pagina }: { data: ProjetosPagina; pagina: number }) {
-  if (data.total === 0) return <Aviso>Sem projetos de autoria registrados.</Aviso>;
-  const paginas = Math.ceil(data.total / 30);
+  if (data.totalItens === 0) return <Aviso>Sem projetos de autoria registrados.</Aviso>;
+  const paginas = Math.ceil(data.totalItens / 30);
   const anos = data.porAno.map((a) => a.ano);
   const min = anos.length ? Math.min(...anos) : null;
   const max = anos.length ? Math.max(...anos) : null;
   const periodo = min == null ? "—" : min === max ? `${min}` : `${min}–${max}`;
-  const taxaLei = data.total > 0 ? Math.round((data.virouLei / data.total) * 100) : 0;
   return (
     <>
       <StatRow>
-        <StatCard rotulo="Projetos de autoria" valor={String(data.total)} />
-        <StatCard rotulo="Viraram lei" valor={String(data.virouLei)} cor="var(--ds-ok-dark)" />
-        <StatCard rotulo="Taxa que virou lei" valor={`${taxaLei}%`} />
+        <StatCard
+          rotulo="Autor principal"
+          valor={String(data.principal.total)}
+          sub={`${data.principal.virouLei} viraram lei`}
+        />
+        <StatCard
+          rotulo="Como co-autor"
+          valor={String(data.coautor.total)}
+          sub={`${data.coautor.virouLei} viraram lei`}
+        />
+        <StatCard
+          rotulo="Viraram lei (total)"
+          valor={String(data.principal.virouLei + data.coautor.virouLei)}
+          cor="var(--ds-ok-dark)"
+        />
         <StatCard rotulo="Período" valor={periodo} />
       </StatRow>
 
-      <SecaoTitulo>Projetos por ano</SecaoTitulo>
+      <p className="mt-4 max-w-[65ch] text-[13px]" style={{ color: "var(--ds-muted)" }}>
+        <strong>Autor principal</strong> é quem encabeça a proposição (1ª assinatura);{" "}
+        <strong>co-autor</strong> é quem apenas assina junto. Um projeto pode ter dezenas de autores.
+      </p>
+
+      <SecaoTitulo>Proposições por ano</SecaoTitulo>
       <MiniColunas
         dados={data.porAno.map((a) => ({ rotulo: String(a.ano), valor: a.total }))}
         formata={(v) => String(v)}
       />
 
-      <SecaoTitulo>Projetos apresentados</SecaoTitulo>
+      <SecaoTitulo>Proposições assinadas</SecaoTitulo>
       <ul className="mt-2 flex flex-col gap-3">
         {data.itens.map((p, i) => (
           <li key={i} className="rounded-lg border p-3" style={{ borderColor: "var(--ds-hair)" }}>
-            <span className="flex items-center gap-2">
+            <span className="flex flex-wrap items-center gap-2">
               <span className="text-xs font-semibold" style={{ color: "var(--ds-muted)" }}>
                 {p.tipo} · {p.ano}
+              </span>
+              <span
+                className="rounded-full px-2 py-0.5 text-[10px] font-semibold"
+                style={
+                  p.principal
+                    ? { backgroundColor: "var(--ds-primary-light)", color: "var(--ds-primary-darker)" }
+                    : { backgroundColor: "var(--ds-hair)", color: "var(--ds-muted)" }
+                }
+              >
+                {p.principal ? "autor principal" : "co-autor"}
               </span>
               {p.virouLei ? (
                 <span

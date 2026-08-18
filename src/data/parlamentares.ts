@@ -92,7 +92,7 @@ export async function obterPerfil(id: string): Promise<Perfil | null> {
       prisma.votoRegistro.count({ where: { parlamentarId: id, voto: { not: "AUSENTE" } } }),
       prisma.despesa.findMany({ where: { parlamentarId: id, ano: ANO_REFERENCIA } }),
       prisma.favorecido.findMany({ where: { parlamentarId: id }, select: { nome: true, valorPago: true } }),
-      prisma.proposicao.count({ where: { parlamentarId: id } }),
+      prisma.autoria.count({ where: { parlamentarId: id, principal: true } }),
       calcularPercentisCasa(p.casa),
     ]);
 
@@ -173,9 +173,9 @@ export async function listarComRadar(opts: ListarComRadarOpts = {}): Promise<Per
         where: { parlamentarId: { in: ids } },
         select: { parlamentarId: true, nome: true, valorPago: true },
       }),
-      prisma.proposicao.groupBy({
+      prisma.autoria.groupBy({
         by: ["parlamentarId"],
-        where: { parlamentarId: { in: ids } },
+        where: { parlamentarId: { in: ids }, principal: true },
         _count: { _all: true },
       }),
       Promise.all(casasPresentes.map((c) => calcularPercentisCasa(c))),

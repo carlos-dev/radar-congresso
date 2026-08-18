@@ -48,35 +48,45 @@ export async function detalheCota(parlamentarId: string, ano: number): Promise<C
 }
 
 export interface ProjetosPagina {
-  total: number;
-  virouLei: number;
+  principal: { total: number; virouLei: number };
+  coautor: { total: number; virouLei: number };
+  totalItens: number;
   porAno: { ano: number; total: number }[];
-  itens: { tipo: string; ano: number; ementa: string; virouLei: boolean }[];
+  itens: { tipo: string; ano: number; ementa: string; virouLei: boolean; principal: boolean }[];
 }
 
 export async function listaProjetos(parlamentarId: string, pagina = 1): Promise<ProjetosPagina> {
-  const [total, virouLei, porAnoRows, itens] = await Promise.all([
-    prisma.proposicao.count({ where: { parlamentarId } }),
-    prisma.proposicao.count({ where: { parlamentarId, virouLei: true } }),
+  const [pTotal, pLei, cTotal, cLei, porAnoRows, autorias] = await Promise.all([
+    prisma.autoria.count({ where: { parlamentarId, principal: true } }),
+    prisma.autoria.count({ where: { parlamentarId, principal: true, proposicao: { virouLei: true } } }),
+    prisma.autoria.count({ where: { parlamentarId, principal: false } }),
+    prisma.autoria.count({ where: { parlamentarId, principal: false, proposicao: { virouLei: true } } }),
     prisma.proposicao.groupBy({
       by: ["ano"],
-      where: { parlamentarId },
+      where: { autorias: { some: { parlamentarId } } },
       _count: { _all: true },
       orderBy: { ano: "asc" },
     }),
-    prisma.proposicao.findMany({
+    prisma.autoria.findMany({
       where: { parlamentarId },
-      select: { tipo: true, ano: true, ementa: true, virouLei: true },
-      orderBy: [{ ano: "desc" }],
+      select: { principal: true, proposicao: { select: { tipo: true, ano: true, ementa: true, virouLei: true } } },
+      orderBy: [{ proposicao: { ano: "desc" } }],
       skip: (pagina - 1) * 30,
       take: 30,
     }),
   ]);
   return {
-    total,
-    virouLei,
+    principal: { total: pTotal, virouLei: pLei },
+    coautor: { total: cTotal, virouLei: cLei },
+    totalItens: pTotal + cTotal,
     porAno: porAnoRows.map((r) => ({ ano: r.ano, total: r._count._all })),
-    itens,
+    itens: autorias.map((a) => ({
+      tipo: a.proposicao.tipo,
+      ano: a.proposicao.ano,
+      ementa: a.proposicao.ementa,
+      virouLei: a.proposicao.virouLei,
+      principal: a.principal,
+    })),
   };
 }
 

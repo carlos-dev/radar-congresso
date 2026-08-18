@@ -38,9 +38,9 @@ export async function calcularPercentisCasa(casa: Casa): Promise<Map<string, Per
       where: { parlamentarId: { in: ids }, ano: ANO_REFERENCIA },
       _sum: { valor: true },
     }),
-    prisma.proposicao.groupBy({
+    prisma.autoria.groupBy({
       by: ["parlamentarId"],
-      where: { parlamentarId: { in: ids } },
+      where: { parlamentarId: { in: ids }, principal: true },
       _count: { _all: true },
     }),
   ]);

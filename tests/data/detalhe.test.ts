@@ -11,12 +11,16 @@ beforeAll(async () => {
     { parlamentarId: id, ano: 2025, mes: 2, tipo: "X", fornecedorNome: "Forn A", fornecedorDoc: "1", valor: 200 },
     { parlamentarId: id, ano: 2025, mes: 1, tipo: "Y", fornecedorNome: "Forn B", fornecedorDoc: "2", valor: 100 },
   ] });
-  await prisma.proposicao.create({ data: { externalId: "det-prop-1", parlamentarId: id, tipo: "PL", ano: 2024, ementa: "Projeto de teste." } });
+  const prop = await prisma.proposicao.create({
+    data: { externalId: "det-prop-1", tipo: "PL", ano: 2024, ementa: "Projeto de teste." },
+  });
+  await prisma.autoria.create({ data: { proposicaoId: prop.id, parlamentarId: id, principal: true } });
   await prisma.favorecido.create({ data: { parlamentarId: id, codigoEmenda: "E1", doc: "9", nome: "Benef X", tipoPessoa: "PJ", valorPago: 5000, ano: 2024 } });
 });
 afterAll(async () => {
   await prisma.favorecido.deleteMany({ where: { parlamentarId: id } });
-  await prisma.proposicao.deleteMany({ where: { parlamentarId: id } });
+  await prisma.autoria.deleteMany({ where: { parlamentarId: id } });
+  await prisma.proposicao.deleteMany({ where: { externalId: "det-prop-1" } });
   await prisma.despesa.deleteMany({ where: { parlamentarId: id } });
   await prisma.parlamentar.delete({ where: { id } });
 });
@@ -36,12 +40,13 @@ describe("detalhe", () => {
     expect(r.porMes[1]).toMatchObject({ mes: 2, total: 200 });
     expect(r.porMes[2]).toMatchObject({ mes: 3, total: 0 });
   });
-  it("listaProjetos retorna as proposições com total e quebra por ano", async () => {
+  it("listaProjetos separa autor principal de co-autor, com quebra por ano", async () => {
     const r = await listaProjetos(id, 1);
-    expect(r.total).toBe(1);
-    expect(r.virouLei).toBe(0);
+    expect(r.principal).toEqual({ total: 1, virouLei: 0 });
+    expect(r.coautor).toEqual({ total: 0, virouLei: 0 });
+    expect(r.totalItens).toBe(1);
     expect(r.porAno).toContainEqual({ ano: 2024, total: 1 });
-    expect(r.itens[0]).toMatchObject({ tipo: "PL", ano: 2024, ementa: "Projeto de teste." });
+    expect(r.itens[0]).toMatchObject({ tipo: "PL", ano: 2024, ementa: "Projeto de teste.", principal: true });
   });
   it("listaEmendas agrega por beneficiário com ano e total geral", async () => {
     const r = await listaEmendas(id);
