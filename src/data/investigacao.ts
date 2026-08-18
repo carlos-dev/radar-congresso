@@ -5,6 +5,22 @@ import { detectarConexoes, type Conexao, type BeneficiarioInput } from "../analy
 
 type Doacao = { doadorNome: string; doadorDoc: string; valor: number; ano: number };
 
+// Doações simbólicas não sustentam a hipótese de vínculo (R$500 não "compra"
+// uma emenda milionária). Cortamos ruído abaixo deste piso.
+const MIN_DOACAO = 1000;
+
+// Beneficiários institucionais / agentes financeiros de repasse (Banco do
+// Brasil, Caixa, BNDES...) não são "empresa privada com sócios" — o dinheiro
+// passa por eles. Casar um doador ao QSA deles é falso positivo.
+const CNPJ_RAIZ_INSTITUCIONAL = new Set(["00000000", "00360305", "33657248"]);
+const RE_INSTITUCIONAL =
+  /banco do brasil|caixa econ[ôo]mica|\bbndes\b|banco do nordeste|banco da amaz[ôo]nia|banco central|financiadora de estudos|\bfinep\b/i;
+
+export function ehInstitucional(nome: string, doc: string): boolean {
+  const raiz = soDigitos(doc).slice(0, 8);
+  return CNPJ_RAIZ_INSTITUCIONAL.has(raiz) || RE_INSTITUCIONAL.test(nome ?? "");
+}
+
 /**
  * Remove auto-doações: o candidato doando à própria campanha não é vínculo a
  * investigar. Casa pelo CPF (quando temos) ou pelo nome do parlamentar.
@@ -20,12 +36,15 @@ export function semAutoDoacao(doacoes: Doacao[], cpf: string | null, nome: strin
 }
 
 export async function obterConexoes(parlamentarId: string): Promise<Conexao[]> {
-  const [parlamentar, doacoesRaw, favorecidos] = await Promise.all([
+  const [parlamentar, doacoesRaw, favorecidosRaw] = await Promise.all([
     prisma.parlamentar.findUnique({ where: { id: parlamentarId }, select: { cpf: true, nome: true } }),
     prisma.doacao.findMany({ where: { parlamentarId } }),
     prisma.favorecido.findMany({ where: { parlamentarId } }),
   ]);
-  const doacoes = semAutoDoacao(doacoesRaw, parlamentar?.cpf ?? null, parlamentar?.nome ?? "");
+  const doacoes = semAutoDoacao(doacoesRaw, parlamentar?.cpf ?? null, parlamentar?.nome ?? "").filter(
+    (d) => d.valor >= MIN_DOACAO,
+  );
+  const favorecidos = favorecidosRaw.filter((f) => !ehInstitucional(f.nome, f.doc));
   if (doacoes.length === 0 || favorecidos.length === 0) return [];
 
   const cnpjs = [...new Set(favorecidos.filter((f) => f.tipoPessoa === "PJ").map((f) => soDigitos(f.doc)))];
@@ -74,7 +93,7 @@ export async function obterConexoes(parlamentarId: string): Promise<Conexao[]> {
  * Requer que os sócios dos CNPJs fornecedores já tenham sido buscados (Socio).
  */
 export async function obterConexoesCota(parlamentarId: string): Promise<Conexao[]> {
-  const [parlamentar, doacoesRaw, fornecedores] = await Promise.all([
+  const [parlamentar, doacoesRaw, fornecedoresRaw] = await Promise.all([
     prisma.parlamentar.findUnique({ where: { id: parlamentarId }, select: { cpf: true, nome: true } }),
     prisma.doacao.findMany({ where: { parlamentarId } }),
     prisma.despesa.groupBy({
@@ -85,7 +104,10 @@ export async function obterConexoesCota(parlamentarId: string): Promise<Conexao[
       take: 50,
     }),
   ]);
-  const doacoes = semAutoDoacao(doacoesRaw, parlamentar?.cpf ?? null, parlamentar?.nome ?? "");
+  const doacoes = semAutoDoacao(doacoesRaw, parlamentar?.cpf ?? null, parlamentar?.nome ?? "").filter(
+    (d) => d.valor >= MIN_DOACAO,
+  );
+  const fornecedores = fornecedoresRaw.filter((f) => !ehInstitucional(f.fornecedorNome, f.fornecedorDoc ?? ""));
   if (doacoes.length === 0 || fornecedores.length === 0) return [];
 
   const cnpjs = [

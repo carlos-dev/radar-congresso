@@ -1,5 +1,14 @@
 import { describe, it, expect } from "vitest";
-import { semAutoDoacao } from "../../src/data/investigacao";
+import { semAutoDoacao, ehInstitucional } from "../../src/data/investigacao";
+
+describe("ehInstitucional", () => {
+  it("detecta agentes financeiros por nome e por raiz de CNPJ", () => {
+    expect(ehInstitucional("BANCO DO BRASIL SA", "00000000000191")).toBe(true);
+    expect(ehInstitucional("CAIXA ECONOMICA FEDERAL", "00360305000104")).toBe(true);
+    expect(ehInstitucional("Qualquer coisa", "00360305000104")).toBe(true); // raiz Caixa
+    expect(ehInstitucional("HOSPITAL SAO VICENTE", "12345678000199")).toBe(false);
+  });
+});
 
 const d = (doadorNome: string, doadorDoc: string) => ({ doadorNome, doadorDoc, valor: 100, ano: 2022 });
 
