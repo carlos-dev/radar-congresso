@@ -1,13 +1,31 @@
 import { prisma } from "../db/client";
-import { soDigitos } from "../lib/texto";
+import { soDigitos, normalizaNome } from "../lib/texto";
 import { ANO_REFERENCIA } from "../lib/config";
 import { detectarConexoes, type Conexao, type BeneficiarioInput } from "../analysis/conexoes";
 
+type Doacao = { doadorNome: string; doadorDoc: string; valor: number; ano: number };
+
+/**
+ * Remove auto-doações: o candidato doando à própria campanha não é vínculo a
+ * investigar. Casa pelo CPF (quando temos) ou pelo nome do parlamentar.
+ */
+export function semAutoDoacao(doacoes: Doacao[], cpf: string | null, nome: string): Doacao[] {
+  const meuCpf = soDigitos(cpf ?? "");
+  const meuNome = normalizaNome(nome);
+  return doacoes.filter(
+    (d) =>
+      !(meuCpf && soDigitos(d.doadorDoc) === meuCpf) &&
+      normalizaNome(d.doadorNome) !== meuNome,
+  );
+}
+
 export async function obterConexoes(parlamentarId: string): Promise<Conexao[]> {
-  const [doacoes, favorecidos] = await Promise.all([
+  const [parlamentar, doacoesRaw, favorecidos] = await Promise.all([
+    prisma.parlamentar.findUnique({ where: { id: parlamentarId }, select: { cpf: true, nome: true } }),
     prisma.doacao.findMany({ where: { parlamentarId } }),
     prisma.favorecido.findMany({ where: { parlamentarId } }),
   ]);
+  const doacoes = semAutoDoacao(doacoesRaw, parlamentar?.cpf ?? null, parlamentar?.nome ?? "");
   if (doacoes.length === 0 || favorecidos.length === 0) return [];
 
   const cnpjs = [...new Set(favorecidos.filter((f) => f.tipoPessoa === "PJ").map((f) => soDigitos(f.doc)))];
@@ -56,7 +74,8 @@ export async function obterConexoes(parlamentarId: string): Promise<Conexao[]> {
  * Requer que os sócios dos CNPJs fornecedores já tenham sido buscados (Socio).
  */
 export async function obterConexoesCota(parlamentarId: string): Promise<Conexao[]> {
-  const [doacoes, fornecedores] = await Promise.all([
+  const [parlamentar, doacoesRaw, fornecedores] = await Promise.all([
+    prisma.parlamentar.findUnique({ where: { id: parlamentarId }, select: { cpf: true, nome: true } }),
     prisma.doacao.findMany({ where: { parlamentarId } }),
     prisma.despesa.groupBy({
       by: ["fornecedorNome", "fornecedorDoc"],
@@ -66,6 +85,7 @@ export async function obterConexoesCota(parlamentarId: string): Promise<Conexao[
       take: 50,
     }),
   ]);
+  const doacoes = semAutoDoacao(doacoesRaw, parlamentar?.cpf ?? null, parlamentar?.nome ?? "");
   if (doacoes.length === 0 || fornecedores.length === 0) return [];
 
   const cnpjs = [
