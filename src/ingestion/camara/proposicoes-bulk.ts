@@ -8,18 +8,23 @@ export interface ProposicaoMeta {
   tipo: string;
   ano: number;
   ementa: string;
+  situacao: string;
   virouLei: boolean;
 }
 
-/** Parseia proposicoes-AAAA.csv (metadados + situação → virouLei). */
+/** Parseia proposicoes-AAAA.csv (metadados + situação de tramitação). */
 export function parseProposicoesMeta(csv: string): ProposicaoMeta[] {
-  return parseCsvObjetos(csv).map((r) => ({
-    externalId: r["id"],
-    tipo: r["siglaTipo"],
-    ano: Number(r["ano"]) || 0,
-    ementa: r["ementa"] ?? "",
-    virouLei: virouLeiPorSituacao(r["ultimoStatus_descricaoSituacao"] ?? ""),
-  }));
+  return parseCsvObjetos(csv).map((r) => {
+    const situacao = (r["ultimoStatus_descricaoSituacao"] ?? "").trim();
+    return {
+      externalId: r["id"],
+      tipo: r["siglaTipo"],
+      ano: Number(r["ano"]) || 0,
+      ementa: r["ementa"] ?? "",
+      situacao,
+      virouLei: virouLeiPorSituacao(situacao),
+    };
+  });
 }
 
 export interface AutoriaBruta {
@@ -91,7 +96,7 @@ export async function ingestProposicoesBulk(
     await prisma.proposicao.createMany({
       data: chunk.map((eid) => {
         const m = metaPorId.get(eid)!;
-        return { externalId: eid, tipo: m.tipo, ano: m.ano, ementa: m.ementa, virouLei: m.virouLei };
+        return { externalId: eid, tipo: m.tipo, ano: m.ano, ementa: m.ementa, situacao: m.situacao, virouLei: m.virouLei };
       }),
       skipDuplicates: true,
     });

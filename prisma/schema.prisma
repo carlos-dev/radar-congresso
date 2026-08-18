@@ -102,6 +102,7 @@ model Proposicao {
   ano        Int
   ementa     String
   virouLei   Boolean   @default(false)
+  situacao   String? // status de tramitação atual (ultimoStatus_descricaoSituacao)
   autorias   Autoria[]
   @@index([ano])
 }

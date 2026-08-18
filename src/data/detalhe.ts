@@ -53,7 +53,7 @@ export interface ProjetosPagina {
   coautor: { total: number; virouLei: number };
   totalItens: number;
   porAno: { ano: number; total: number }[];
-  itens: { tipo: string; ano: number; ementa: string; virouLei: boolean; principal: boolean }[];
+  itens: { tipo: string; ano: number; ementa: string; virouLei: boolean; principal: boolean; situacao: string | null }[];
 }
 
 export async function listaProjetos(parlamentarId: string, pagina = 1): Promise<ProjetosPagina> {
@@ -72,7 +72,7 @@ export async function listaProjetos(parlamentarId: string, pagina = 1): Promise<
     }),
     prisma.autoria.findMany({
       where: { parlamentarId, proposicao: soProjetos },
-      select: { principal: true, proposicao: { select: { tipo: true, ano: true, ementa: true, virouLei: true } } },
+      select: { principal: true, proposicao: { select: { tipo: true, ano: true, ementa: true, virouLei: true, situacao: true } } },
       // as que viraram lei primeiro, depois mais recentes
       orderBy: [{ proposicao: { virouLei: "desc" } }, { proposicao: { ano: "desc" } }],
       skip: (pagina - 1) * 30,
@@ -90,6 +90,7 @@ export async function listaProjetos(parlamentarId: string, pagina = 1): Promise<
       ementa: a.proposicao.ementa,
       virouLei: a.proposicao.virouLei,
       principal: a.principal,
+      situacao: a.proposicao.situacao,
     })),
   };
 }

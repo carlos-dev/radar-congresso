@@ -194,6 +194,11 @@ function ProjetosView({ data, pagina }: { data: ProjetosPagina; pagina: number }
               ) : null}
             </span>
             <p className="mt-1 text-sm">{p.ementa}</p>
+            {p.situacao ? (
+              <p className="mt-1.5 text-xs" style={{ color: "var(--ds-muted)" }}>
+                Status: {p.situacao}
+              </p>
+            ) : null}
           </li>
         ))}
       </ul>

@@ -8,8 +8,11 @@ describe("parseProposicoesMeta", () => {
       '"111";"PL";"2023";"Dispõe sobre X.";"Transformado em Norma Jurídica"\n' +
       '"222";"REQ";"2024";"Requer Y.";"Aguardando Parecer"';
     const r = parseProposicoesMeta(csv);
-    expect(r[0]).toEqual({ externalId: "111", tipo: "PL", ano: 2023, ementa: "Dispõe sobre X.", virouLei: true });
-    expect(r[1].virouLei).toBe(false);
+    expect(r[0]).toEqual({
+      externalId: "111", tipo: "PL", ano: 2023, ementa: "Dispõe sobre X.",
+      situacao: "Transformado em Norma Jurídica", virouLei: true,
+    });
+    expect(r[1]).toMatchObject({ situacao: "Aguardando Parecer", virouLei: false });
   });
 });
 
