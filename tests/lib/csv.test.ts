@@ -1,5 +1,12 @@
 import { describe, it, expect } from "vitest";
-import { parseCsv, parseCsvObjetos } from "../../src/lib/csv";
+import { parseCsv, parseCsvObjetos, splitCsvLinha } from "../../src/lib/csv";
+
+describe("splitCsvLinha", () => {
+  it("respeita aspas e aspas escapadas numa linha", () => {
+    expect(splitCsvLinha('"a";"b;c";"d"')).toEqual(["a", "b;c", "d"]);
+    expect(splitCsvLinha('"x ""y"" z";"2"')).toEqual(['x "y" z', "2"]);
+  });
+});
 
 describe("parseCsv", () => {
   it("respeita delimitador dentro de campo entre aspas", () => {

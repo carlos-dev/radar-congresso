@@ -42,6 +42,31 @@ export function parseCsv(texto: string, delim = ";"): string[][] {
   return linhas;
 }
 
+/**
+ * Divide UMA linha de CSV respeitando aspas (delimitador dentro de aspas não
+ * separa). Para arquivos grandes, processe linha a linha com isto em vez de
+ * `parseCsv`, que carrega tudo na memória. Não trata quebras de linha dentro de
+ * campos — use só quando os campos não tiverem `\n` embutido.
+ */
+export function splitCsvLinha(linha: string, delim = ";"): string[] {
+  const out: string[] = [];
+  let campo = "";
+  let dentroAspas = false;
+  for (let i = 0; i < linha.length; i++) {
+    const c = linha[i];
+    if (dentroAspas) {
+      if (c === '"') {
+        if (linha[i + 1] === '"') { campo += '"'; i++; }
+        else dentroAspas = false;
+      } else campo += c;
+    } else if (c === '"') dentroAspas = true;
+    else if (c === delim) { out.push(campo); campo = ""; }
+    else campo += c;
+  }
+  out.push(campo);
+  return out;
+}
+
 /** Como `parseCsv`, mas devolve objetos usando a primeira linha como cabeçalho. */
 export function parseCsvObjetos(texto: string, delim = ";"): Record<string, string>[] {
   const linhas = parseCsv(texto, delim);

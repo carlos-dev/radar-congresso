@@ -355,7 +355,11 @@ function EmendasView({ data }: { data: EmendasDetalhe }) {
       </Aviso>
     );
   const anos = data.porAno.map((a) => a.ano);
-  const periodo = anos.length ? `${Math.min(...anos)}–${Math.max(...anos)}` : "—";
+  const periodo = anos.length
+    ? Math.min(...anos) === Math.max(...anos)
+      ? `${Math.min(...anos)}`
+      : `${Math.min(...anos)}–${Math.max(...anos)}`
+    : "—";
   const maxBenef = data.beneficiarios[0].total || 1;
   return (
     <>
