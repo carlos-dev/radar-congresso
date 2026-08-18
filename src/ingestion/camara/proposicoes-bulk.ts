@@ -33,7 +33,11 @@ export interface AutoriaBruta {
   principal: boolean;
 }
 
-/** Parseia proposicoesAutores-AAAA.csv, só linhas de deputado (com id). */
+/**
+ * Parseia proposicoesAutores-AAAA.csv, só linhas de deputado (com id).
+ * `principal` = 1ª assinatura (ordemAssinatura=1) — o autor de fato. NÃO usar
+ * `proponente`, que vem marcado em vários autores de projetos coletivos.
+ */
 export function parseAutorias(csv: string): AutoriaBruta[] {
   const out: AutoriaBruta[] = [];
   for (const r of parseCsvObjetos(csv)) {
@@ -42,7 +46,7 @@ export function parseAutorias(csv: string): AutoriaBruta[] {
     out.push({
       idProposicao: r["idProposicao"],
       externalIdDeputado: dep,
-      principal: (r["proponente"] ?? "").trim() === "1",
+      principal: (r["ordemAssinatura"] ?? "").trim() === "1",
     });
   }
   return out;

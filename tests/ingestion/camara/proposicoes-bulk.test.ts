@@ -17,15 +17,15 @@ describe("parseProposicoesMeta", () => {
 });
 
 describe("parseAutorias", () => {
-  it("mantém só deputados (com id) e marca principal pelo proponente", () => {
+  it("marca principal pela 1ª assinatura (ordemAssinatura=1), não pelo proponente", () => {
     const csv =
-      '"idProposicao";"idDeputadoAutor";"proponente"\n' +
-      '"111";"204536";"1"\n' + // deputado, proponente
-      '"111";"220645";"0"\n' + // deputado, co-autor
-      '"111";"";"1"'; // Senado/órgão (sem id) → ignora
+      '"idProposicao";"idDeputadoAutor";"ordemAssinatura";"proponente"\n' +
+      '"111";"204536";"1";"1"\n' + // 1ª assinatura → principal
+      '"111";"220645";"2";"1"\n' + // proponente=1 mas ordem 2 → co-autor
+      '"111";"";"1";"1"'; // Senado/órgão (sem id) → ignora
     const r = parseAutorias(csv);
     expect(r).toHaveLength(2);
     expect(r[0]).toEqual({ idProposicao: "111", externalIdDeputado: "204536", principal: true });
-    expect(r[1].principal).toBe(false);
+    expect(r[1].principal).toBe(false); // tinha proponente=1, mas não é a 1ª assinatura
   });
 });
