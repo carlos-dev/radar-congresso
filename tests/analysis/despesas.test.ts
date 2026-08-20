@@ -12,21 +12,34 @@ describe("redFlagDespesas", () => {
     expect(rf.fraseSimples).toContain("95%");
   });
 
-  it("alerta por concentração num único fornecedor, mesmo com gasto normal", () => {
+  it("atenção (não alerta) ao concentrar em categoria discricionária", () => {
+    const rf = redFlagDespesas({
+      totalGasto: 100000,
+      percentilRuim: 0.2,
+      porFornecedor: [{ nome: "Agência XPTO", valor: 90000 }, { nome: "Y", valor: 10000 }],
+      categoriaConcentrada: "DIVULGAÇÃO DA ATIVIDADE PARLAMENTAR.",
+    });
+    expect(rf.nivel).toBe("atencao");
+    expect(rf.fraseSimples).toContain("Agência XPTO");
+    expect(rf.fraseSimples).toContain("divulgação");
+  });
+
+  it("concentração em transporte/aluguel NÃO sinaliza (operacional)", () => {
+    const rf = redFlagDespesas({
+      totalGasto: 100000,
+      percentilRuim: 0.2,
+      porFornecedor: [{ nome: "Táxi Aéreo LTDA", valor: 90000 }, { nome: "Y", valor: 10000 }],
+      categoriaConcentrada: "LOCAÇÃO OU FRETAMENTO DE AERONAVES",
+    });
+    expect(rf.nivel).toBe("ok");
+  });
+
+  it("concentração discricionária mas gasto baixo (abaixo do piso) não sinaliza", () => {
     const rf = redFlagDespesas({
       totalGasto: 10000,
       percentilRuim: 0.2,
-      porFornecedor: [{ nome: "Gráfica XPTO", valor: 9000 }, { nome: "Y", valor: 1000 }],
-    });
-    expect(rf.nivel).toBe("alerta");
-    expect(rf.fraseSimples).toContain("Gráfica XPTO");
-  });
-
-  it("ok quando gasto normal e distribuído", () => {
-    const rf = redFlagDespesas({
-      totalGasto: 5000,
-      percentilRuim: 0.4,
-      porFornecedor: [{ nome: "A", valor: 2500 }, { nome: "B", valor: 2500 }],
+      porFornecedor: [{ nome: "Agência", valor: 9000 }, { nome: "Y", valor: 1000 }],
+      categoriaConcentrada: "DIVULGAÇÃO DA ATIVIDADE PARLAMENTAR.",
     });
     expect(rf.nivel).toBe("ok");
   });

@@ -31,7 +31,7 @@ function groupSum<T>(
 interface AgregadosParlamentar {
   totalVotacoesCasa: number;
   presencas: number;
-  despesas: { fornecedorNome: string; valor: number }[];
+  despesas: { fornecedorNome: string; valor: number; tipo: string }[];
   beneficiarios: { nome: string; valorPago: number }[];
   totalProposicoes: number;
   // Posição relativa aos pares da mesma casa (0..1, maior = pior).
@@ -43,6 +43,15 @@ function fichaDeAgregados(a: AgregadosParlamentar): Ficha {
   const porFornecedor = groupSum(a.despesas, (d) => d.fornecedorNome, (d) => d.valor)
     .map(([nome, valor]) => ({ nome, valor }));
 
+  // Categoria (tipo CEAP) do fornecedor dominante — calibra a concentração.
+  const topForn = porFornecedor.reduce((m, f) => (f.valor > m.valor ? f : m), { nome: "", valor: 0 });
+  const tiposDoTop = groupSum(
+    a.despesas.filter((d) => d.fornecedorNome === topForn.nome),
+    (d) => d.tipo,
+    (d) => d.valor,
+  );
+  const categoriaConcentrada = tiposDoTop.sort((x, y) => y[1] - x[1])[0]?.[0] ?? null;
+
   const totalEmendas = a.beneficiarios.reduce((s, b) => s + b.valorPago, 0);
   const porBeneficiario = groupSum(a.beneficiarios, (b) => b.nome, (b) => b.valorPago)
     .map(([nome, valor]) => ({ nome, valor }));
@@ -51,7 +60,7 @@ function fichaDeAgregados(a: AgregadosParlamentar): Ficha {
   // da mesma casa (calculado em `calcularPercentisCasa`), não mais constantes.
   return montarFicha({
     presenca: { totalVotacoes: a.totalVotacoesCasa, presencas: a.presencas, percentilRuim: a.percentis.presenca },
-    despesas: { totalGasto, percentilRuim: a.percentis.gasto, porFornecedor },
+    despesas: { totalGasto, percentilRuim: a.percentis.gasto, porFornecedor, categoriaConcentrada },
     emendas: { total: totalEmendas, porBeneficiario },
     legislativa: { totalProposicoes: a.totalProposicoes, percentilRuim: a.percentis.proposicoes },
   });
@@ -168,7 +177,7 @@ export async function listarComRadar(opts: ListarComRadarOpts = {}): Promise<Per
       }),
       prisma.despesa.findMany({
         where: { parlamentarId: { in: ids }, ano: ANO_REFERENCIA },
-        select: { parlamentarId: true, fornecedorNome: true, valor: true },
+        select: { parlamentarId: true, fornecedorNome: true, valor: true, tipo: true },
       }),
       prisma.favorecido.findMany({
         where: { parlamentarId: { in: ids } },
@@ -197,7 +206,7 @@ export async function listarComRadar(opts: ListarComRadarOpts = {}): Promise<Per
   const propMap = new Map<string, number>();
   for (const r of proposicaoRows) propMap.set(r.parlamentarId, r._count._all);
 
-  const despesasPorId = new Map<string, { fornecedorNome: string; valor: number }[]>();
+  const despesasPorId = new Map<string, { fornecedorNome: string; valor: number; tipo: string }[]>();
   for (const d of despesasAll) {
     const arr = despesasPorId.get(d.parlamentarId);
     if (arr) arr.push(d);
