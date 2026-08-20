@@ -85,6 +85,28 @@ export default async function HomePage({ searchParams }: Props) {
       <main className="mx-auto w-full max-w-[1080px] px-6 pb-16 pt-10">
         <Legenda />
 
+        <div
+          className="mt-6 flex flex-wrap items-center justify-between gap-4 rounded-xl border p-5"
+          style={{ backgroundColor: "var(--ds-card)", borderColor: "var(--ds-hair)" }}
+        >
+          <div className="min-w-0">
+            <p className="text-[14px] font-semibold">
+              Seus representantes votaram como você esperava?
+            </p>
+            <p className="mt-1 text-[13px]" style={{ color: "var(--ds-muted)" }}>
+              Veja como deputados e senadores do seu estado se posicionaram nas votações mais
+              importantes.
+            </p>
+          </div>
+          <Link
+            href="/como-votaram"
+            className="shrink-0 text-[14px] font-semibold underline underline-offset-4"
+            style={{ color: "var(--ds-primary-darker)" }}
+          >
+            Ver por estado →
+          </Link>
+        </div>
+
         <p aria-live="polite" className="mt-6 text-[14px]" style={{ color: "var(--ds-muted)" }}>
           {busca
             ? `${n} ${n === 1 ? "parlamentar encontrado" : "parlamentares encontrados"} para “${busca}”`
