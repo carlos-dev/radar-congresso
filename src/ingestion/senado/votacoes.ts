@@ -1,5 +1,6 @@
 import { fetchJson } from "../../lib/http";
 import { prisma } from "../../db/client";
+import { inferirTipo } from "../camara/votacoes-arquivo";
 
 const BASE = "https://legis.senado.leg.br/dadosabertos";
 
@@ -10,6 +11,10 @@ export interface VotacaoSenado {
   data: Date;
   descricao: string;
   secreta: boolean;
+  votosSim: number | null;
+  votosNao: number | null;
+  votosOutros: number | null;
+  tipo: string | null;
   votos: { codigoParlamentar: string; voto: VotoTipoSenado }[];
 }
 
@@ -26,11 +31,16 @@ export function parseVotacoesSenado(json: any): VotacaoSenado[] {
     const secreta = v.Secreta === "S";
     const votosRaw = v?.Votos?.VotoParlamentar ?? [];
     const votosArr = Array.isArray(votosRaw) ? votosRaw : [votosRaw];
+    const descricao = v.DescricaoVotacao ?? "";
     return {
       externalId: String(v.CodigoSessaoVotacao),
       data: new Date(v.DataSessao),
-      descricao: v.DescricaoVotacao ?? "",
+      descricao,
       secreta,
+      votosSim: Number(v.TotalVotosSim) || null,
+      votosNao: Number(v.TotalVotosNao) || null,
+      votosOutros: Number(v.TotalVotosAbstencao) || null,
+      tipo: inferirTipo(descricao),
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       votos: votosArr.map((p: any) => ({
         codigoParlamentar: String(p.CodigoParlamentar),
@@ -57,10 +67,14 @@ export async function ingestVotacoesSenado(
 
   let totalVotos = 0;
   for (const v of votacoes) {
+    const campos = {
+      descricao: v.descricao, data: v.data, secreta: v.secreta,
+      votosSim: v.votosSim, votosNao: v.votosNao, votosOutros: v.votosOutros, tipo: v.tipo,
+    };
     const votacao = await prisma.votacao.upsert({
       where: { externalId: v.externalId },
-      update: { descricao: v.descricao, data: v.data, secreta: v.secreta },
-      create: { externalId: v.externalId, casa: "SENADO", data: v.data, descricao: v.descricao, secreta: v.secreta },
+      update: campos,
+      create: { externalId: v.externalId, casa: "SENADO", ...campos },
     });
     await prisma.votoRegistro.deleteMany({ where: { votacaoId: votacao.id } });
     const regs = v.votos
