@@ -12,7 +12,7 @@ export interface Pauta {
   secreta: boolean;
   revisada: boolean;
 }
-export interface VotoDoParlamentar { id: string; nome: string; partido: string | null; uf: string | null; casa: string }
+export interface VotoDoParlamentar { id: string; externalId: string; nome: string; partido: string | null; uf: string | null; casa: string }
 
 export async function pautasQueImportam(limite = 15): Promise<Pauta[]> {
   // secretas ficam de fora (não dá pra mostrar como cada um votou). Excluir
@@ -51,7 +51,7 @@ export async function pautasQueImportam(limite = 15): Promise<Pauta[]> {
 export async function votosPorUf(votacaoIds: string[], uf: string): Promise<Record<string, Record<string, VotoDoParlamentar[]>>> {
   const regs = await prisma.votoRegistro.findMany({
     where: { votacaoId: { in: votacaoIds }, parlamentar: { uf } },
-    select: { votacaoId: true, voto: true, parlamentar: { select: { id: true, nome: true, partido: true, uf: true, casa: true } } },
+    select: { votacaoId: true, voto: true, parlamentar: { select: { id: true, externalId: true, nome: true, partido: true, uf: true, casa: true } } },
   });
   const out: Record<string, Record<string, VotoDoParlamentar[]>> = {};
   for (const id of votacaoIds) out[id] = {};

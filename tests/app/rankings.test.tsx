@@ -18,8 +18,8 @@ vi.mock("@/data/rankings", () => ({
       unidade: "brl",
       fonte: "Câmara — CEAP",
       itens: [
-        { posicao: 1, id: "a", nome: "Fulano Silva", partido: "PT", uf: "SP", casa: "CAMARA", urlFoto: null, valor: 500000 },
-        { posicao: 2, id: "b", nome: "Beltrano Souza", partido: "PL", uf: "BA", casa: "CAMARA", urlFoto: null, valor: 250000 },
+        { posicao: 1, id: "a", externalId: "a", nome: "Fulano Silva", partido: "PT", uf: "SP", casa: "CAMARA", urlFoto: null, valor: 500000 },
+        { posicao: 2, id: "b", externalId: "b", nome: "Beltrano Souza", partido: "PL", uf: "BA", casa: "CAMARA", urlFoto: null, valor: 250000 },
       ],
     },
   ]),
@@ -34,6 +34,6 @@ describe("Página de rankings", () => {
     expect(html).toContain("Quem mais gastou a cota parlamentar");
     expect(html).toContain("Fulano Silva");
     expect(html).toContain("R$"); // valor em BRL
-    expect(html).toContain("/parlamentar/a"); // link para o perfil do líder
+    expect(html).toContain("/parlamentar/fulano-silva-a"); // link para o perfil do líder
   });
 });

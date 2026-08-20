@@ -11,6 +11,7 @@ import { SiteFooter } from "@/components/SiteFooter";
 import { NIVEL_CONFIG } from "@/lib/nivel";
 import { iniciais } from "@/lib/iniciais";
 import { obterPerfil } from "@/lib/dados";
+import { slugParlamentar } from "@/lib/slug";
 import { obterConexoes, obterConexoesCota } from "@/data/investigacao";
 import { perfilEleitoral } from "@/data/eleitoral";
 
@@ -123,7 +124,7 @@ export default async function PerfilPage({ params }: Props) {
         <ol className="grid grid-cols-[repeat(auto-fit,minmax(320px,1fr))] gap-4">
           {perfil.ficha.redFlags.map((rf, i) => (
             <li key={rf.id} className="flex">
-              <RedFlagCard rf={rf} numero={i + 1} idParlamentar={perfil.id} />
+              <RedFlagCard rf={rf} numero={i + 1} idParlamentar={slugParlamentar(perfil.nome, perfil.externalId)} />
             </li>
           ))}
         </ol>

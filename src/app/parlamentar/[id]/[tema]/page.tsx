@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { obterPerfil } from "@/data/parlamentares";
+import { slugParlamentar } from "@/lib/slug";
 import {
   detalheCota, listaProjetos, listaVotacoes, listaEmendas,
   type CotaDetalhe, type ProjetosPagina, type VotacoesDetalhe, type EmendasDetalhe,
@@ -55,7 +56,7 @@ export default async function DetalhePage({ params, searchParams }: Props) {
 
   return (
     <main className="mx-auto w-full max-w-[900px] px-6 py-8">
-      <Link href={`/parlamentar/${id}`} className="text-sm" style={{ color: "var(--ds-muted)" }}>
+      <Link href={`/parlamentar/${slugParlamentar(perfil.nome, perfil.externalId)}`} className="text-sm" style={{ color: "var(--ds-muted)" }}>
         ← Voltar para {perfil.nome}
       </Link>
       <h1 className="mt-3 text-2xl font-semibold tracking-tight">

@@ -3,6 +3,7 @@ import Link from "next/link";
 import { TopNav } from "@/components/TopNav";
 import { SiteFooter } from "@/components/SiteFooter";
 import { pautasQueImportam, votosPorUf, type Pauta, type VotoDoParlamentar } from "@/data/pautas";
+import { slugParlamentar } from "@/lib/slug";
 
 export const dynamic = "force-dynamic";
 
@@ -241,7 +242,7 @@ function GruposDeVoto({ votos }: { votos: Record<string, VotoDoParlamentar[]> })
             {g.lista.map((v) => (
               <li key={v.id}>
                 <Link
-                  href={`/parlamentar/${v.id}`}
+                  href={`/parlamentar/${slugParlamentar(v.nome, v.externalId)}`}
                   className="inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-[13px] transition-colors hover:border-[color:var(--ds-primary)]"
                   style={{ borderColor: "var(--ds-hair)", color: "var(--ds-ink)" }}
                 >

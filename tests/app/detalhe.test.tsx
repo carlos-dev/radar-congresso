@@ -13,7 +13,7 @@ vi.mock("next/navigation", () => ({
 }));
 vi.mock("@/data/parlamentares", () => ({
   obterPerfil: vi.fn().mockResolvedValue({
-    id: "1", nome: "Fulano", partido: "X", uf: "SP", casa: "CAMARA", urlFoto: null,
+    id: "1", externalId: "1", nome: "Fulano", partido: "X", uf: "SP", casa: "CAMARA", urlFoto: null,
     ficha: { nivelGeral: "ok", redFlags: [] },
   }),
 }));

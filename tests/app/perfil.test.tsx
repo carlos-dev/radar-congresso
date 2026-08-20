@@ -14,6 +14,7 @@ vi.mock("lucide-react", () => ({}));
 vi.mock("@/lib/dados", () => ({
   obterPerfil: vi.fn().mockResolvedValue({
     id: "1",
+    externalId: "99",
     nome: "Fulano de Tal",
     partido: "XPTO",
     uf: "SP",

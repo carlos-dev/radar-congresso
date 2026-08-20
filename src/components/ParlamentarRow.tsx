@@ -4,6 +4,7 @@ import type { CSSProperties } from "react";
 import { RadarBars } from "@/components/RadarBars";
 import { NIVEL_CONFIG } from "@/lib/nivel";
 import { iniciais } from "@/lib/iniciais";
+import { slugParlamentar } from "@/lib/slug";
 import type { Perfil } from "@/lib/dados";
 
 type Props = { p: Perfil };
@@ -16,7 +17,7 @@ export function ParlamentarRow({ p }: Props) {
 
   return (
     <Link
-      href={`/parlamentar/${p.id}`}
+      href={`/parlamentar/${slugParlamentar(p.nome, p.externalId)}`}
       aria-label={`Ver ficha de ${p.nome}, ${partidoUf}, ${casa}`}
       className="linha-parlamentar group grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-[18px] border-b border-l-[3px] border-l-transparent px-4 py-4 transition-colors hover:border-l-[color:var(--geral)] hover:bg-[color:var(--ds-hair)]"
       style={

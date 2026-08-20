@@ -6,6 +6,7 @@ import { TIPOS_PROJETO } from "../lib/proposicoes";
 export interface ItemRanking {
   posicao: number;
   id: string;
+  externalId: string;
   nome: string;
   partido: string | null;
   uf: string | null;
@@ -25,6 +26,7 @@ export interface Ranking {
 
 type DetalheParlamentar = {
   id: string;
+  externalId: string;
   nome: string;
   partido: string | null;
   uf: string | null;
@@ -87,7 +89,7 @@ export async function obterRankings(): Promise<Ranking[]> {
   ];
   const ps = await prisma.parlamentar.findMany({
     where: { id: { in: ids } },
-    select: { id: true, nome: true, partido: true, uf: true, casa: true, urlFoto: true },
+    select: { id: true, externalId: true, nome: true, partido: true, uf: true, casa: true, urlFoto: true },
   });
   const mapa = new Map<string, DetalheParlamentar>(ps.map((p) => [p.id, p]));
 

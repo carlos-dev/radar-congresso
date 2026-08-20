@@ -4,6 +4,7 @@ import { obterRankings, type Ranking, type ItemRanking } from "@/data/rankings";
 import { TopNav } from "@/components/TopNav";
 import { SiteFooter } from "@/components/SiteFooter";
 import { iniciais } from "@/lib/iniciais";
+import { slugParlamentar } from "@/lib/slug";
 
 export const metadata = {
   title: "Rankings — Radar do Congresso",
@@ -112,7 +113,7 @@ function LinhaRanking({
   return (
     <li className="border-t first:border-t-0" style={{ borderColor: "var(--ds-hair)" }}>
       <Link
-        href={`/parlamentar/${item.id}`}
+        href={`/parlamentar/${slugParlamentar(item.nome, item.externalId)}`}
         className="flex items-center gap-3 px-5 py-3 transition-colors hover:bg-[color:var(--ds-hair)]"
       >
         <span

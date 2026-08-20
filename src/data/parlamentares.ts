@@ -9,6 +9,7 @@ import {
   type PercentisParlamentar,
 } from "./percentis";
 import { TIPOS_PROJETO } from "../lib/proposicoes";
+import { externalIdDoSlug } from "../lib/slug";
 
 // Soma `valueFn` agrupando por `keyFn`, preservando a ordem de primeira
 // aparição das chaves. Retorna as entradas [chave, soma].
@@ -68,6 +69,7 @@ function fichaDeAgregados(a: AgregadosParlamentar): Ficha {
 
 export interface ParlamentarResumo {
   id: string;
+  externalId: string;
   nome: string;
   partido: string | null;
   uf: string | null;
@@ -79,7 +81,7 @@ export async function listarParlamentares(busca?: string): Promise<ParlamentarRe
   return prisma.parlamentar.findMany({
     where: busca ? { nome: { contains: busca, mode: "insensitive" } } : undefined,
     orderBy: { nome: "asc" },
-    select: { id: true, nome: true, partido: true, uf: true, casa: true, urlFoto: true },
+    select: { id: true, externalId: true, nome: true, partido: true, uf: true, casa: true, urlFoto: true },
     take: 100,
   });
 }
@@ -88,9 +90,14 @@ export interface Perfil extends ParlamentarResumo {
   ficha: Ficha;
 }
 
-export async function obterPerfil(id: string): Promise<Perfil | null> {
-  const p = await prisma.parlamentar.findUnique({ where: { id } });
+export async function obterPerfil(idOuSlug: string): Promise<Perfil | null> {
+  const externalId = externalIdDoSlug(idOuSlug);
+  const p = externalId
+    ? await prisma.parlamentar.findFirst({ where: { externalId } })
+    : await prisma.parlamentar.findUnique({ where: { id: idOuSlug } });
   if (!p) return null;
+
+  const id = p.id;
 
   // Presença só faz sentido sobre votações NOMINAIS (com voto individual
   // registrado). A maioria das "votações" da Câmara é simbólica/sem voto
@@ -116,7 +123,7 @@ export async function obterPerfil(id: string): Promise<Perfil | null> {
   });
 
   return {
-    id: p.id, nome: p.nome, partido: p.partido, uf: p.uf, casa: p.casa, urlFoto: p.urlFoto, ficha,
+    id: p.id, externalId: p.externalId, nome: p.nome, partido: p.partido, uf: p.uf, casa: p.casa, urlFoto: p.urlFoto, ficha,
   };
 }
 
@@ -156,7 +163,7 @@ export async function listarComRadar(opts: ListarComRadarOpts = {}): Promise<Per
   const ps = await prisma.parlamentar.findMany({
     where,
     orderBy: { nome: "asc" },
-    select: { id: true, nome: true, partido: true, uf: true, casa: true, urlFoto: true },
+    select: { id: true, externalId: true, nome: true, partido: true, uf: true, casa: true, urlFoto: true },
     take: 100,
   });
   if (ps.length === 0) return [];

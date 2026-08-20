@@ -10,7 +10,7 @@ vi.mock("@/data/pautas", () => ({
     { id: "v2", casa: "SENADO", data: new Date("2025-02-01"), titulo: "Sabatina X", resumoCidadao: null, significadoSim: null, significadoNao: null, secreta: true, revisada: false },
   ]),
   votosPorUf: vi.fn().mockResolvedValue({
-    v1: { SIM: [{ id: "p1", nome: "Fulano", partido: "PT", uf: "PE", casa: "CAMARA" }], NAO: [{ id: "p2", nome: "Ciclano", partido: "PL", uf: "PE", casa: "CAMARA" }] },
+    v1: { SIM: [{ id: "p1", externalId: "p1", nome: "Fulano", partido: "PT", uf: "PE", casa: "CAMARA" }], NAO: [{ id: "p2", externalId: "p2", nome: "Ciclano", partido: "PL", uf: "PE", casa: "CAMARA" }] },
     v2: {},
   }),
 }));
@@ -31,7 +31,7 @@ describe("como-votaram", () => {
     expect(html).toContain("Muda os impostos.");
     expect(html).toContain("A favor da reforma.");
     expect(html).toContain("Fulano");
-    expect(html).toContain("/parlamentar/p1");
+    expect(html).toContain("/parlamentar/fulano-p1");
     expect(html).toContain("sigiloso"); // v2 secreta
   });
 });
