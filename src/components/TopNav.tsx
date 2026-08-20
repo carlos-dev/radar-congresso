@@ -18,6 +18,12 @@ export function TopNav({ updatedLabel }: Props) {
       </Link>
       <div className="flex items-center gap-5">
         <Link
+          href="/como-votaram"
+          className="text-[12px] font-semibold uppercase tracking-[0.08em] transition-colors hover:text-[color:var(--ds-primary)]"
+        >
+          Como votaram
+        </Link>
+        <Link
           href="/rankings"
           className="text-[12px] font-semibold uppercase tracking-[0.08em] transition-colors hover:text-[color:var(--ds-primary)]"
         >

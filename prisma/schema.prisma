@@ -17,6 +17,7 @@ enum Voto {
   ABSTENCAO
   OBSTRUCAO
   AUSENTE
+  SIGILOSO
 }
 
 model Parlamentar {
@@ -81,6 +82,11 @@ model Votacao {
   // Curadoria (híbrido): true força destaque, false oculta, null = heurística.
   destaque    Boolean?
   titulo      String? // rótulo curado em linguagem clara (null = usa a descrição)
+  secreta        Boolean @default(false)
+  resumoCidadao  String?
+  significadoSim String?
+  significadoNao String?
+  legibilidadeRevisada Boolean @default(false)
   votos       VotoRegistro[]
 }
 
