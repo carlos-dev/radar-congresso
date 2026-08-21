@@ -33,6 +33,14 @@ type Props = {
   searchParams: Promise<{ pagina?: string }>;
 };
 
+export async function generateMetadata({ params }: Props) {
+  const { id, tema } = await params;
+  if (!TEMAS.includes(tema as Tema)) return {};
+  const perfil = await obterPerfil(id);
+  if (!perfil) return {};
+  return { title: `${TITULO[tema as Tema]} — ${perfil.nome}` };
+}
+
 export default async function DetalhePage({ params, searchParams }: Props) {
   const { id, tema } = await params;
   const { pagina: paginaStr } = await searchParams;

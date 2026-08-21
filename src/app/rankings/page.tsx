@@ -7,7 +7,9 @@ import { iniciais } from "@/lib/iniciais";
 import { slugParlamentar } from "@/lib/slug";
 
 export const metadata = {
-  title: "Rankings — Radar do Congresso",
+  title: "Rankings",
+  description:
+    "Os extremos do Congresso em números: quem mais gastou a cota, destinou emendas, apresentou projetos e faltou às votações.",
 };
 
 // Dados vêm do banco (atualizados por ingestão) — renderiza a cada request

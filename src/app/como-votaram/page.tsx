@@ -7,6 +7,12 @@ import { slugParlamentar } from "@/lib/slug";
 
 export const dynamic = "force-dynamic";
 
+export const metadata = {
+  title: "Como votaram por você",
+  description:
+    "Escolha seu estado e veja como os deputados e senadores da sua bancada votaram nas pautas que importam — com o significado de cada voto em linguagem simples.",
+};
+
 type Props = { searchParams: Promise<{ uf?: string }> };
 
 // As 27 unidades da federação, na ordem alfabética por região tradicional dos dados oficiais.

@@ -17,6 +17,18 @@ import { perfilEleitoral } from "@/data/eleitoral";
 
 type Props = { params: Promise<{ id: string }> };
 
+export async function generateMetadata({ params }: Props) {
+  const { id } = await params;
+  const perfil = await obterPerfil(id);
+  if (!perfil) return { title: "Parlamentar não encontrado" };
+  const partidoUf = [perfil.partido, perfil.uf].filter(Boolean).join("-");
+  const casa = perfil.casa === "SENADO" ? "Senador(a)" : "Deputado(a) Federal";
+  return {
+    title: perfil.nome,
+    description: `${perfil.nome} — ${casa} ${partidoUf}. Presença nas votações, uso da cota, emendas e produção legislativa, em dados públicos oficiais.`,
+  };
+}
+
 export default async function PerfilPage({ params }: Props) {
   const { id } = await params;
   const perfil = await obterPerfil(id);
