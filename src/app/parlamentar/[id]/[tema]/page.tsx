@@ -44,15 +44,17 @@ export default async function DetalhePage({ params, searchParams }: Props) {
 
   // Busca os dados aqui (async) e passa a seções síncronas — assim a árvore
   // renderizada não tem componentes async (evita suspensão no SSR/testes).
+  // As funções de dados usam o id interno (cuid), não o slug da URL.
+  const pid = perfil.id;
   let conteudo: ReactNode = null;
-  if (t === "cota") conteudo = <CotaView data={await detalheCota(id, ANO)} />;
-  else if (t === "projetos") conteudo = <ProjetosView data={await listaProjetos(id, pagina)} pagina={pagina} />;
+  if (t === "cota") conteudo = <CotaView data={await detalheCota(pid, ANO)} />;
+  else if (t === "projetos") conteudo = <ProjetosView data={await listaProjetos(pid, pagina)} pagina={pagina} />;
   else if (t === "votacoes") {
     const destaque = await votacoesEmDestaque();
-    const votos = await comoVotou(id, destaque.map((d) => d.id));
-    conteudo = <VotacoesView data={await listaVotacoes(id)} destaque={destaque} comoVotou={votos} />;
+    const votos = await comoVotou(pid, destaque.map((d) => d.id));
+    conteudo = <VotacoesView data={await listaVotacoes(pid)} destaque={destaque} comoVotou={votos} />;
   }
-  else if (t === "emendas") conteudo = <EmendasView data={await listaEmendas(id)} />;
+  else if (t === "emendas") conteudo = <EmendasView data={await listaEmendas(pid)} />;
 
   return (
     <main className="mx-auto w-full max-w-[900px] px-6 py-8">

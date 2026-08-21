@@ -48,4 +48,12 @@ describe("Página de detalhe", () => {
       Detalhe({ params: Promise.resolve({ id: "1", tema: "xyz" }), searchParams: Promise.resolve({}) }),
     ).rejects.toThrow("notFound");
   });
+
+  it("usa o id interno (cuid) do perfil nas queries, não o slug da URL", async () => {
+    const { detalheCota } = await import("@/data/detalhe");
+    vi.mocked(detalheCota).mockClear();
+    // a URL traz o slug; a query de dados tem que usar o perfil.id ("1"), não o slug
+    await Detalhe({ params: Promise.resolve({ id: "fulano-de-tal-1", tema: "cota" }), searchParams: Promise.resolve({}) });
+    expect(vi.mocked(detalheCota)).toHaveBeenCalledWith("1", expect.any(Number));
+  });
 });

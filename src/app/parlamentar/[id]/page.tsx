@@ -22,10 +22,11 @@ export default async function PerfilPage({ params }: Props) {
   const perfil = await obterPerfil(id);
   if (!perfil) notFound();
 
+  // Estas funções usam o id interno (cuid), não o slug da URL.
   const [conexoesEmenda, conexoesCota, eleitoral] = await Promise.all([
-    obterConexoes(id),
-    obterConexoesCota(id),
-    perfilEleitoral(id),
+    obterConexoes(perfil.id),
+    obterConexoesCota(perfil.id),
+    perfilEleitoral(perfil.id),
   ]);
   const conexoes = [...conexoesEmenda, ...conexoesCota];
 
