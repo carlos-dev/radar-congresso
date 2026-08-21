@@ -87,8 +87,9 @@ function SeletorEstados() {
           <li key={uf}>
             <Link
               href={`?uf=${uf}`}
-              className="flex items-center justify-center rounded-lg border py-4 text-[15px] font-semibold transition-colors hover:border-[color:var(--ds-primary)] hover:text-[color:var(--ds-primary-darker)]"
-              style={{ backgroundColor: "var(--ds-card)", borderColor: "var(--ds-hair)", color: "var(--ds-ink)" }}
+              // Cores base em classe (não inline) para o hover poder sobrescrever —
+              // style inline vence o :hover e mataria o efeito.
+              className="flex items-center justify-center rounded-lg border py-4 text-[15px] font-semibold border-[color:var(--ds-hair)] bg-[color:var(--ds-card)] text-[color:var(--ds-ink)] transition-colors hover:border-[color:var(--ds-primary)] hover:bg-[color:var(--ds-primary-light)] hover:text-[color:var(--ds-primary-darker)]"
             >
               {uf}
             </Link>
