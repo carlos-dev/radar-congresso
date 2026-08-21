@@ -2,6 +2,7 @@ import { readFile } from "node:fs/promises";
 import { prisma } from "../../db/client";
 import { parseCsvObjetos } from "../../lib/csv";
 import { virouLeiPorSituacao } from "./proposicoes-status";
+import { TIPOS_PROJETO } from "../../lib/proposicoes";
 
 export interface ProposicaoMeta {
   externalId: string;
@@ -74,7 +75,10 @@ export async function ingestProposicoesBulk(
     readFile(autoresCsvPath, "utf8"),
   ]);
 
-  const metas = parseProposicoesMeta(propCsv);
+  // Só matérias de projeto (PL/PLP/PEC/PDL...). Acessórias (REQ/RIC/RPD/EMC...)
+  // nunca são exibidas pelo app — não importamos, pra não inchar o banco.
+  const projeto = new Set(TIPOS_PROJETO);
+  const metas = parseProposicoesMeta(propCsv).filter((m) => projeto.has(m.tipo));
   const metaPorId = new Map(metas.map((m) => [m.externalId, m]));
 
   const deputados = await prisma.parlamentar.findMany({
