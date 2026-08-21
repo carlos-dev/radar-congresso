@@ -129,13 +129,13 @@ body {
   --ds-primary-dark: #1f8f75;
   --ds-primary-darker: #186d5a;
   --ds-primary-light: #d5f6ee;
-  --ds-muted: #15181e7a; /* texto atenuado sobre claro */
+  --ds-muted: #15181ea8; /* texto atenuado sobre claro (~66%, legível) */
   --ds-emphasis: #15181ecc; /* texto de ênfase sobre claro */
   --ds-subtle: #15181e3d;
   --ds-hair: #15181e14; /* bordas finas no claro */
   --ds-on-dark: #ffffff;
   --ds-on-dark-72: #ffffffb8;
-  --ds-on-dark-48: #ffffff7a;
+  --ds-on-dark-48: #ffffffab;
   --ds-on-dark-24: #ffffff3d;
   --ds-on-dark-8: #ffffff14;
 
@@ -149,7 +149,7 @@ body {
   --ds-alerta: #fb565b;
   --ds-alerta-dark: #a9040a;
   --ds-alerta-bg: #feebec;
-  --ds-semdado: #15181e7a;
+  --ds-semdado: #15181ea8;
   --ds-semdado-dark: #15181ecc;
   --ds-semdado-bg: #15181e14;
 }
